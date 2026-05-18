@@ -25,12 +25,12 @@
     <div class="topbar-date" id="todayDate"></div>
   </header>
 
-  <!-- SETUP MODAL (first visit) -->
+  <!-- SETUP MODAL -->
   <div class="modal-overlay" id="setupModal">
     <div class="modal-box">
       <div class="modal-icon">👩‍🏫</div>
       <h2 class="modal-title">أهلاً بك في نجوم</h2>
-      <p class="modal-sub">أدخلي بياناتك مرة واحدة فقط</p>
+      <p class="modal-sub">أدخلي بياناتك للبدء</p>
       <div class="field-group">
         <label>اسم المعلمة</label>
         <input type="text" id="setupTeacher" placeholder="Miss Sara" />
@@ -52,23 +52,19 @@
 
   <!-- TABS -->
   <nav class="tabs">
-    <button class="tab active" data-tab="attendance" onclick="switchTab('attendance', this)">
+    <button class="tab active" onclick="switchTab('attendance', this)">
       <span class="tab-icon">📋</span>
       <span class="tab-label">الحضور</span>
     </button>
-    <button class="tab" data-tab="checkout" onclick="switchTab('checkout', this)">
-      <span class="tab-icon">🏠</span>
-      <span class="tab-label">الانصراف</span>
-    </button>
-    <button class="tab" data-tab="notes" onclick="switchTab('notes', this)">
+    <button class="tab" onclick="switchTab('notes', this)">
       <span class="tab-icon">📝</span>
       <span class="tab-label">الملاحظات</span>
     </button>
-    <button class="tab" data-tab="incidents" onclick="switchTab('incidents', this)">
+    <button class="tab" onclick="switchTab('incidents', this)">
       <span class="tab-icon">🚨</span>
       <span class="tab-label">الحوادث</span>
     </button>
-    <button class="tab" data-tab="assessments" onclick="switchTab('assessments', this)">
+    <button class="tab" onclick="switchTab('assessments', this)">
       <span class="tab-icon">📊</span>
       <span class="tab-label">التقييمات</span>
     </button>
@@ -88,63 +84,17 @@
 
       <div class="children-grid" id="attendanceGrid"></div>
 
-      <div class="summary-bar" id="attendanceSummary">
+      <div class="summary-bar">
         <span class="sum-item green">✅ حاضرون: <strong id="presentCount">0</strong></span>
         <span class="sum-item red">❌ غائبون: <strong id="absentCount">0</strong></span>
       </div>
 
-      <button class="btn-submit" id="attendanceSubmit" onclick="submitAttendance()">
+      <button class="btn-submit" onclick="submitAttendance()">
         <span class="btn-icon">📤</span> إرسال تقرير الحضور
       </button>
     </section>
 
-    <!-- ======= TAB 2: CHECKOUT ======= -->
-    <section class="tab-content" id="tab-checkout">
-      <div class="section-header">
-        <div>
-          <h2 class="section-title">تسجيل الانصراف</h2>
-          <p class="section-sub">سجّلي من استلم الطفل</p>
-        </div>
-      </div>
-
-      <div class="form-card">
-        <div class="field-group">
-          <label>اسم الطفل</label>
-          <select id="checkoutChild">
-            <option value="">— اختاري —</option>
-          </select>
-        </div>
-        <div class="field-group">
-          <label>نوع المستلِم</label>
-          <div class="radio-group">
-            <label class="radio-option">
-              <input type="radio" name="receiverType" value="أب" checked /> أب
-            </label>
-            <label class="radio-option">
-              <input type="radio" name="receiverType" value="أم" /> أم
-            </label>
-            <label class="radio-option">
-              <input type="radio" name="receiverType" value="جد" /> جد / جدة
-            </label>
-            <label class="radio-option">
-              <input type="radio" name="receiverType" value="سائق" /> سائق
-            </label>
-            <label class="radio-option">
-              <input type="radio" name="receiverType" value="أخرى" /> أخرى
-            </label>
-          </div>
-        </div>
-        <div class="field-group">
-          <label>اسم المستلِم</label>
-          <input type="text" id="receiverName" placeholder="اسم الشخص الذي استلم الطفل" />
-        </div>
-        <button class="btn-submit" onclick="submitCheckout()">
-          <span class="btn-icon">🏠</span> تسجيل الانصراف
-        </button>
-      </div>
-    </section>
-
-    <!-- ======= TAB 3: NOTES ======= -->
+    <!-- ======= TAB 2: NOTES ======= -->
     <section class="tab-content" id="tab-notes">
       <div class="section-header">
         <div>
@@ -164,20 +114,16 @@
           <label>نوع الملاحظة</label>
           <div class="type-cards">
             <div class="type-card selected" data-value="سلوك" onclick="selectNoteType(this)">
-              <span>⚠️</span>
-              <span>سلوك</span>
+              <span>⚠️</span><span>سلوك</span>
             </div>
             <div class="type-card" data-value="مستلزمات" onclick="selectNoteType(this)">
-              <span>🎒</span>
-              <span>مستلزمات</span>
+              <span>🎒</span><span>مستلزمات</span>
             </div>
             <div class="type-card" data-value="صحة" onclick="selectNoteType(this)">
-              <span>🏥</span>
-              <span>صحة</span>
+              <span>🏥</span><span>صحة</span>
             </div>
             <div class="type-card" data-value="إيجابية" onclick="selectNoteType(this)">
-              <span>⭐</span>
-              <span>إيجابية</span>
+              <span>⭐</span><span>إيجابية</span>
             </div>
           </div>
         </div>
@@ -191,7 +137,7 @@
       </div>
     </section>
 
-    <!-- ======= TAB 4: INCIDENTS ======= -->
+    <!-- ======= TAB 3: INCIDENTS ======= -->
     <section class="tab-content" id="tab-incidents">
       <div class="section-header">
         <div>
@@ -244,7 +190,7 @@
       </div>
     </section>
 
-    <!-- ======= TAB 5: ASSESSMENTS ======= -->
+    <!-- ======= TAB 4: ASSESSMENTS ======= -->
     <section class="tab-content" id="tab-assessments">
       <div class="section-header">
         <div>
@@ -256,20 +202,20 @@
       <div class="form-card" style="margin-bottom:1rem">
         <div class="field-group" style="margin:0">
           <label>المادة الدراسية</label>
-          <div class="subject-cards" id="subjectCards">
-            <div class="subject-card selected" data-subject="arabic_letters" data-label="اللغة العربية — الحروف" onclick="selectSubject(this)">
+          <div class="subject-cards">
+            <div class="subject-card selected" data-subject="arabic_letters" onclick="selectSubject(this)">
               <span>📖</span><span>عربي — حروف</span>
             </div>
-            <div class="subject-card" data-subject="arabic_harakat" data-label="اللغة العربية — الحركات" onclick="selectSubject(this)">
+            <div class="subject-card" data-subject="arabic_harakat" onclick="selectSubject(this)">
               <span>✍️</span><span>عربي — حركات</span>
             </div>
-            <div class="subject-card" data-subject="math" data-label="الحساب" onclick="selectSubject(this)">
+            <div class="subject-card" data-subject="math" onclick="selectSubject(this)">
               <span>🔢</span><span>حساب</span>
             </div>
-            <div class="subject-card" data-subject="english" data-label="الإنجليزي" onclick="selectSubject(this)">
+            <div class="subject-card" data-subject="english" onclick="selectSubject(this)">
               <span>🔤</span><span>إنجليزي</span>
             </div>
-            <div class="subject-card" data-subject="islamic" data-label="التربية الإسلامية" onclick="selectSubject(this)">
+            <div class="subject-card" data-subject="islamic" onclick="selectSubject(this)">
               <span>☪️</span><span>إسلامية</span>
             </div>
           </div>
