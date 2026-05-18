@@ -434,7 +434,6 @@ async function sendToWebhook(url, payload) {
   try {
     const res = await fetch(APPS_SCRIPT_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'text/plain' },
       body: JSON.stringify({ action, payload }),
     });
 
