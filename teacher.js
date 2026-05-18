@@ -427,28 +427,33 @@ async function submitAssessments() {
    ============================ */
 async function sendToWebhook(url, payload) {
   showLoading(true);
+
+  // استخرج اسم الـ action من الـ URL (آخر جزء)
+  const action = url.split('/').pop();
+
   try {
-    const res = await fetch(url, {
+    const res = await fetch(APPS_SCRIPT_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify({ action, payload }),
     });
 
     showLoading(false);
 
-    if (res.ok) {
+    const data = await res.json();
+
+    if (data.status === 'ok') {
       showToast('✅ تم الإرسال بنجاح!', 'success');
       return true;
     } else {
-      const txt = await res.text();
-      console.error('Server error:', txt);
+      console.error('Proxy error:', data);
       showToast('❌ خطأ في الإرسال — حاولي مرة أخرى', 'error');
       return false;
     }
   } catch (err) {
     showLoading(false);
     console.error('Network error:', err);
-    showToast('❌ تعذر الاتصال بـ n8n — تأكد من تشغيله', 'error');
+    showToast('❌ تعذر الاتصال — تحققي من الإنترنت', 'error');
     return false;
   }
 }
