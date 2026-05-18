@@ -21,9 +21,12 @@ const SUBJECTS = {
    ============================ */
 let teacherName = '';
 let className   = '';
-let children    = [];
+let children    = [];      // كل الأطفال
+let presentChildren = [];  // ✅ الحاضرون فقط — يتحدث بعد إرسال الحضور
 
-let attendanceState   = {};
+let attendanceState      = {};
+let attendanceSubmitted  = false;   // ✅ منع إرسال الحضور أكتر من مرة
+
 let selectedNoteType  = 'سلوك';
 let selectedSeverity  = 'متوسط';
 let selectedSubject   = 'arabic_letters';
@@ -41,8 +44,8 @@ function setTodayDate() {
   const str = new Date().toLocaleDateString('ar-EG', {
     weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
   });
-  document.getElementById('todayDate').textContent            = str;
-  document.getElementById('attendanceDateBadge').textContent  = str;
+  document.getElementById('todayDate').textContent           = str;
+  document.getElementById('attendanceDateBadge').textContent = str;
 }
 
 /* ============================
@@ -51,7 +54,7 @@ function setTodayDate() {
 function showSetupModal() {
   document.getElementById('setupModal').classList.remove('hidden');
   document.getElementById('setupTeacher').value = '';
-  document.getElementById('setupClass').value   = 'KG1-A';
+  document.getElementById('setupClass').value   = 'Pre-A';
 }
 
 async function saveSetup() {
@@ -65,6 +68,10 @@ async function saveSetup() {
   document.getElementById('teacherNameDisplay').textContent = teacherName;
   document.getElementById('classNameDisplay').textContent   = className;
   document.getElementById('setupModal').classList.add('hidden');
+
+  // ✅ إعادة ضبط حالة الحضور عند تغيير الفصل
+  attendanceSubmitted = false;
+  presentChildren     = [];
 
   await loadChildren(className);
 }
@@ -91,6 +98,9 @@ async function loadChildren(cls) {
     children = [];
   }
   showLoading(false);
+
+  // ✅ قبل إرسال الحضور، كل الأطفال يظهروا في كل التابات
+  presentChildren = [...children];
   initAll();
 }
 
@@ -135,7 +145,10 @@ function buildAttendanceGrid() {
       <span class="child-name">${child.child_name}</span>
       <span class="child-status-icon">✅</span>
     `;
-    card.addEventListener('click', () => toggleAttendance(child.child_id, card));
+    card.addEventListener('click', () => {
+      if (attendanceSubmitted) return; // ✅ منع التعديل بعد الإرسال
+      toggleAttendance(child.child_id, card);
+    });
     grid.appendChild(card);
   });
 
@@ -162,6 +175,11 @@ function updateAttendanceSummary() {
 }
 
 async function submitAttendance() {
+  // ✅ منع الإرسال أكتر من مرة في نفس اليوم
+  if (attendanceSubmitted) {
+    showToast('⚠️ تم إرسال الحضور من قبل اليوم', 'error');
+    return;
+  }
   if (children.length === 0) return showToast('⚠️ لا يوجد أطفال', 'error');
 
   const today   = todayISO();
@@ -178,17 +196,42 @@ async function submitAttendance() {
     absent:  absent.map(c => ({ child_id: c.child_id, child_name: c.child_name })),
   };
 
-  await sendToAppsScript('Attendance', payload);
+  const ok = await sendToAppsScript('Attendance', payload);
+
+  if (ok) {
+    attendanceSubmitted = true;
+
+    // ✅ تحديث قائمة الحاضرين للتابات التانية
+    presentChildren = present;
+    buildChildSelects();
+    buildAssessmentGrid();
+
+    // ✅ تعطيل كروت الحضور بصرياً
+    document.querySelectorAll('#attendanceGrid .child-card').forEach(card => {
+      card.style.opacity = '0.6';
+      card.style.pointerEvents = 'none';
+    });
+
+    // ✅ تغيير زرار الإرسال
+    const btn = document.querySelector('#tab-attendance .btn-submit');
+    if (btn) {
+      btn.textContent = '✅ تم إرسال الحضور';
+      btn.disabled    = true;
+      btn.style.opacity = '0.6';
+    }
+  }
 }
 
 /* ============================
-   CHILD SELECTS (Notes + Incidents)
+   CHILD SELECTS — الحاضرون فقط بعد إرسال الحضور
    ============================ */
 function buildChildSelects() {
+  const list = attendanceSubmitted ? presentChildren : children;
+
   ['noteChild', 'incidentChild'].forEach(id => {
     const sel = document.getElementById(id);
     sel.innerHTML = '<option value="">— اختاري —</option>';
-    children.forEach(c => {
+    list.forEach(c => {
       const opt = document.createElement('option');
       opt.value       = c.child_id;
       opt.textContent = c.child_name;
@@ -213,7 +256,8 @@ async function submitNote() {
   if (!childId)  return showToast('⚠️ اختاري الطفل أولاً', 'error');
   if (!noteText) return showToast('⚠️ اكتبي الملاحظة أولاً', 'error');
 
-  const child = children.find(c => c.child_id === childId);
+  const list  = attendanceSubmitted ? presentChildren : children;
+  const child = list.find(c => c.child_id === childId);
   const today = todayISO();
 
   const payload = {
@@ -254,7 +298,8 @@ async function submitIncident() {
   if (!details) return showToast('⚠️ أدخلي تفاصيل الحادثة', 'error');
   if (!action)  return showToast('⚠️ أدخلي الإجراء المتخذ', 'error');
 
-  const child = children.find(c => c.child_id === childId);
+  const list  = attendanceSubmitted ? presentChildren : children;
+  const child = list.find(c => c.child_id === childId);
   const today = todayISO();
 
   const payload = {
@@ -280,7 +325,7 @@ async function submitIncident() {
 }
 
 /* ============================
-   ASSESSMENTS
+   ASSESSMENTS — الحاضرون فقط بعد إرسال الحضور
    ============================ */
 function selectSubject(el) {
   document.querySelectorAll('.subject-card').forEach(c => c.classList.remove('selected'));
@@ -295,7 +340,10 @@ function buildAssessmentGrid() {
   const subject  = SUBJECTS[selectedSubject];
   assessmentRatings = {};
 
-  children.forEach(child => {
+  // ✅ عرض الحاضرين فقط بعد إرسال الحضور
+  const list = attendanceSubmitted ? presentChildren : children;
+
+  list.forEach(child => {
     assessmentRatings[child.child_id] = {};
     subject.skills.forEach(s => { assessmentRatings[child.child_id][s] = 'كويس'; });
 
@@ -334,9 +382,13 @@ function setRating(childId, skill, value, btn) {
 }
 
 async function submitAssessments() {
-  const subject     = SUBJECTS[selectedSubject];
-  const today       = todayISO();
-  const assessments = children
+  const subject = SUBJECTS[selectedSubject];
+  const today   = todayISO();
+
+  const list = attendanceSubmitted ? presentChildren : children;
+
+  // ✅ الأطفال اللي عندهم تقييم غير كويس فقط بيتبعتوا للشيت
+  const assessments = list
     .map(child => ({
       child_id:   child.child_id,
       child_name: child.child_name,
@@ -345,7 +397,7 @@ async function submitAssessments() {
     .filter(child => Object.values(child.ratings).some(r => r !== 'كويس'));
 
   if (assessments.length === 0) {
-    return showToast('✅ كل الأطفال تقييمهم كويس', 'success');
+    showToast('✅ كل الأطفال تقييمهم كويس', 'success');
   }
 
   const payload = {
@@ -358,13 +410,15 @@ async function submitAssessments() {
     subject_label: subject.label,
     skills: subject.skills,
     assessments,
+    // ✅ بنبعت كل الحاضرين للـ Apps Script عشان يبعت للكويسين كمان
+    allChildren: list.map(c => ({ child_id: c.child_id, child_name: c.child_name })),
   };
 
   await sendToAppsScript('Assessments', payload);
 }
 
 /* ============================
-   HTTP HELPER — Apps Script فقط
+   HTTP HELPER
    ============================ */
 async function sendToAppsScript(action, payload) {
   showLoading(true);
