@@ -1,12 +1,14 @@
-/* teacher.js — واجهة المعلمة */
+/* teacher.js — واجهة المعلمة | نسخة مُصلَحة */
 
 /* ============================
    CONFIG
    ============================ */
-const WEBHOOK_BASE = 'https://script.google.com/macros/s/AKfycbx3A1Q8h8VCPd8k3CYPffM7rbVXtbe6_UpFu6z5m_AMrhb8wif0tVSSY-pofy9uahlVVQ/exec';
 
-// n8n webhooks — غيري الـ BASE_URL لما تنشري على VPS
-const N8N_BASE = 'http://localhost:5678/webhook';
+// Apps Script — مصدر بيانات الأطفال والـ webhooks
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx3A1Q8h8VCPd8k3CYPffM7rbVXtbe6_UpFu6z5m_AMrhb8wif0tVSSY-pofy9uahlVVQ/exec';
+
+// n8n webhooks — غيري N8N_BASE لما تنشري على VPS
+const N8N_BASE = 'https://chomp-phonebook-evict.ngrok-free.dev/webhook';
 const WEBHOOKS = {
   attendance:  `${N8N_BASE}/Attendance`,
   checkout:    `${N8N_BASE}/Checkout`,
@@ -16,59 +18,8 @@ const WEBHOOKS = {
 };
 
 /* ============================
-   CHILDREN DATA
-   — في الإنتاج: اجلبيها من الـ sheet
+   SUBJECTS
    ============================ */
-const CHILDREN_DB = {
-  'KG1-A': [
-    { child_id: 'KG1A-01', child_name: 'أحمد محمد' },
-    { child_id: 'KG1A-02', child_name: 'فاطمة علي' },
-    { child_id: 'KG1A-03', child_name: 'محمد حسن' },
-    { child_id: 'KG1A-04', child_name: 'سارة إبراهيم' },
-    { child_id: 'KG1A-05', child_name: 'علي كريم' },
-    { child_id: 'KG1A-06', child_name: 'نور طارق' },
-    { child_id: 'KG1A-07', child_name: 'ياسمين أحمد' },
-    { child_id: 'KG1A-08', child_name: 'عمر سمير' },
-    { child_id: 'KG1A-09', child_name: 'ليلى منصور' },
-    { child_id: 'KG1A-10', child_name: 'خالد وليد' },
-  ],
-  'KG1-B': [
-    { child_id: 'KG1B-01', child_name: 'مريم خالد' },
-    { child_id: 'KG1B-02', child_name: 'يوسف حسين' },
-    { child_id: 'KG1B-03', child_name: 'ليلى محمود' },
-    { child_id: 'KG1B-04', child_name: 'كريم عادل' },
-    { child_id: 'KG1B-05', child_name: 'رانيا وليد' },
-    { child_id: 'KG1B-06', child_name: 'أيمن فاروق' },
-  ],
-  'KG2-A': [
-    { child_id: 'KG2A-01', child_name: 'سلمى منصور' },
-    { child_id: 'KG2A-02', child_name: 'إياد حسن' },
-    { child_id: 'KG2A-03', child_name: 'دينا أحمد' },
-    { child_id: 'KG2A-04', child_name: 'طارق عمر' },
-    { child_id: 'KG2A-05', child_name: 'هبة سعيد' },
-    { child_id: 'KG2A-06', child_name: 'نادية مصطفى' },
-  ],
-  'KG2-B': [
-    { child_id: 'KG2B-01', child_name: 'ماجدة كريم' },
-    { child_id: 'KG2B-02', child_name: 'حسام علي' },
-    { child_id: 'KG2B-03', child_name: 'إسلام طارق' },
-    { child_id: 'KG2B-04', child_name: 'منى إبراهيم' },
-    { child_id: 'KG2B-05', child_name: 'خالد محمود' },
-  ],
-  'Nursery-A': [
-    { child_id: 'NURA-01', child_name: 'لمار أحمد' },
-    { child_id: 'NURA-02', child_name: 'يزن محمد' },
-    { child_id: 'NURA-03', child_name: 'روان علي' },
-    { child_id: 'NURA-04', child_name: 'تالة سمير' },
-    { child_id: 'NURA-05', child_name: 'آدم حسن' },
-  ],
-  'Nursery-B': [
-    { child_id: 'NURB-01', child_name: 'جنا وليد' },
-    { child_id: 'NURB-02', child_name: 'ريم أحمد' },
-    { child_id: 'NURB-03', child_name: 'زياد كريم' },
-  ],
-};
-
 const SUBJECTS = {
   arabic_letters:  { label: 'اللغة العربية — الحروف',   skills: ['ذكر الحرف', 'كتابته', 'تمكينه'] },
   arabic_harakat:  { label: 'اللغة العربية — الحركات',  skills: ['الفتح', 'الضم', 'الكسر', 'المدود'] },
@@ -79,14 +30,17 @@ const SUBJECTS = {
 
 /* ============================
    STATE
+   — مفيش حاجة بتتحفظ في localStorage غير إعدادات الجهاز لو احتجنا
+   — teacherName و className بيتدخلوا من المودال كل جلسة
    ============================ */
 let teacherName = '';
-let className = '';
-let children = [];
-let attendanceState = {}; // child_id → 'present' | 'absent'
-let selectedNoteType = 'سلوك';
-let selectedSeverity = 'متوسط';
-let selectedSubject = 'arabic_letters';
+let className   = '';
+let children    = []; // بيتملى من Apps Script
+
+let attendanceState   = {}; // child_id → 'present' | 'absent'
+let selectedNoteType  = 'سلوك';
+let selectedSeverity  = 'متوسط';
+let selectedSubject   = 'arabic_letters';
 let assessmentRatings = {}; // child_id → { skill → rating }
 
 /* ============================
@@ -94,47 +48,79 @@ let assessmentRatings = {}; // child_id → { skill → rating }
    ============================ */
 document.addEventListener('DOMContentLoaded', () => {
   setTodayDate();
-  loadSetup();
+  // المودال يظهر دايماً عند كل فتح جديد للصفحة
+  showSetupModal();
 });
 
 function setTodayDate() {
   const now = new Date();
   const opts = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-  const str = now.toLocaleDateString('ar-EG', opts);
+  const str  = now.toLocaleDateString('ar-EG', opts);
   document.getElementById('todayDate').textContent = str;
   document.getElementById('attendanceDateBadge').textContent = str;
 }
 
-function loadSetup() {
-  teacherName = localStorage.getItem('nojoom_teacher') || '';
-  className   = localStorage.getItem('nojoom_class') || '';
-
-  if (!teacherName || !className) {
-    document.getElementById('setupModal').classList.remove('hidden');
-    return;
-  }
-  document.getElementById('setupModal').classList.add('hidden');
-  initAll();
+/* ============================
+   SETUP MODAL
+   — يظهر كل مرة تفتح فيها الصفحة (مفيش localStorage للاسم)
+   ============================ */
+function showSetupModal() {
+  document.getElementById('setupModal').classList.remove('hidden');
+  // مسح أي قيم قديمة عشان ما تظهرش
+  document.getElementById('setupTeacher').value = '';
+  document.getElementById('setupClass').value   = 'KG1-A';
 }
 
-function saveSetup() {
+async function saveSetup() {
   const t = document.getElementById('setupTeacher').value.trim();
   const c = document.getElementById('setupClass').value;
+
   if (!t) { showToast('⚠️ أدخلي اسمك أولاً', 'error'); return; }
+
   teacherName = t;
-  className = c;
-  localStorage.setItem('nojoom_teacher', t);
-  localStorage.setItem('nojoom_class', c);
+  className   = c;
+
+  document.getElementById('teacherNameDisplay').textContent = teacherName;
+  document.getElementById('classNameDisplay').textContent   = className;
   document.getElementById('setupModal').classList.add('hidden');
+
+  // جيبي الأطفال من الشيت بعد ما نعرف الفصل
+  await loadChildrenFromSheet(className);
+}
+
+/* ============================
+   LOAD CHILDREN FROM APPS SCRIPT
+   ============================ */
+async function loadChildrenFromSheet(cls) {
+  showLoading(true);
+
+  try {
+    // Apps Script بيستقبل ?action=getChildren&class=KG1-A
+    const url = `${APPS_SCRIPT_URL}?action=getChildren&class=${encodeURIComponent(cls)}`;
+    const res = await fetch(url);
+
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+
+    const data = await res.json();
+
+    // المفروض يرجع { children: [{child_id, child_name}, ...] }
+    if (data && Array.isArray(data.children)) {
+      children = data.children;
+    } else {
+      throw new Error('بيانات غير صحيحة من السيرفر');
+    }
+
+  } catch (err) {
+    console.error('loadChildren error:', err);
+    showToast('⚠️ تعذر تحميل بيانات الأطفال — تحققي من الاتصال', 'error');
+    children = []; // فاضي عشان متشتغلش ببيانات غلط
+  }
+
+  showLoading(false);
   initAll();
 }
 
 function initAll() {
-  children = CHILDREN_DB[className] || [];
-
-  document.getElementById('teacherNameDisplay').textContent = teacherName;
-  document.getElementById('classNameDisplay').textContent = className;
-
   buildAttendanceGrid();
   buildChildSelects();
   buildAssessmentGrid();
@@ -156,8 +142,15 @@ function switchTab(tabId, btn) {
 function buildAttendanceGrid() {
   const grid = document.getElementById('attendanceGrid');
   grid.innerHTML = '';
+  attendanceState = {};
 
-  // Default: everyone present
+  if (children.length === 0) {
+    grid.innerHTML = '<p style="color:var(--text-muted);text-align:center;padding:2rem;grid-column:1/-1">لا يوجد أطفال في هذا الفصل</p>';
+    updateAttendanceSummary();
+    return;
+  }
+
+  // الكل حاضر بالـ default
   children.forEach(c => { attendanceState[c.child_id] = 'present'; });
 
   children.forEach(child => {
@@ -177,8 +170,7 @@ function buildAttendanceGrid() {
 }
 
 function toggleAttendance(childId, card) {
-  const current = attendanceState[childId];
-  if (current === 'present') {
+  if (attendanceState[childId] === 'present') {
     attendanceState[childId] = 'absent';
     card.className = 'child-card absent';
     card.querySelector('.child-status-icon').textContent = '❌';
@@ -191,19 +183,22 @@ function toggleAttendance(childId, card) {
 }
 
 function updateAttendanceSummary() {
-  const present = Object.values(attendanceState).filter(s => s === 'present').length;
-  const absent  = Object.values(attendanceState).filter(s => s === 'absent').length;
+  const vals    = Object.values(attendanceState);
+  const present = vals.filter(s => s === 'present').length;
+  const absent  = vals.filter(s => s === 'absent').length;
   document.getElementById('presentCount').textContent = present;
-  document.getElementById('absentCount').textContent = absent;
+  document.getElementById('absentCount').textContent  = absent;
 }
 
 async function submitAttendance() {
+  if (children.length === 0) return showToast('⚠️ لا يوجد أطفال لإرسال الحضور', 'error');
+
   const present = children.filter(c => attendanceState[c.child_id] === 'present');
   const absent  = children.filter(c => attendanceState[c.child_id] === 'absent');
-  const today = todayISO();
+  const today   = todayISO();
 
   const payload = {
-    submission_id: `${className.replace('-','')}-${today}-${teacherName.replace(' ','')}-${uid()}`,
+    submission_id: `${className.replace('-','')}-${today}-${teacherName.replace(/\s/g,'')}-${uid()}`,
     timestamp: new Date().toISOString(),
     date: today,
     class: className,
@@ -224,7 +219,7 @@ function buildChildSelects() {
     sel.innerHTML = '<option value="">— اختاري —</option>';
     children.forEach(c => {
       const opt = document.createElement('option');
-      opt.value = c.child_id;
+      opt.value       = c.child_id;
       opt.textContent = c.child_name;
       sel.appendChild(opt);
     });
@@ -232,11 +227,11 @@ function buildChildSelects() {
 }
 
 async function submitCheckout() {
-  const childId   = document.getElementById('checkoutChild').value;
-  const receiver  = document.getElementById('receiverName').value.trim();
-  const recType   = document.querySelector('input[name="receiverType"]:checked')?.value;
+  const childId  = document.getElementById('checkoutChild').value;
+  const receiver = document.getElementById('receiverName').value.trim();
+  const recType  = document.querySelector('input[name="receiverType"]:checked')?.value;
 
-  if (!childId) return showToast('⚠️ اختاري الطفل أولاً', 'error');
+  if (!childId)  return showToast('⚠️ اختاري الطفل أولاً', 'error');
   if (!receiver) return showToast('⚠️ أدخلي اسم المستلِم', 'error');
 
   const child = children.find(c => c.child_id === childId);
@@ -257,7 +252,7 @@ async function submitCheckout() {
   const ok = await sendToWebhook(WEBHOOKS.checkout, payload);
   if (ok) {
     document.getElementById('checkoutChild').value = '';
-    document.getElementById('receiverName').value = '';
+    document.getElementById('receiverName').value  = '';
   }
 }
 
@@ -274,8 +269,8 @@ async function submitNote() {
   const childId  = document.getElementById('noteChild').value;
   const noteText = document.getElementById('noteText').value.trim();
 
-  if (!childId)   return showToast('⚠️ اختاري الطفل أولاً', 'error');
-  if (!noteText)  return showToast('⚠️ اكتبي الملاحظة أولاً', 'error');
+  if (!childId)  return showToast('⚠️ اختاري الطفل أولاً', 'error');
+  if (!noteText) return showToast('⚠️ اكتبي الملاحظة أولاً', 'error');
 
   const child = children.find(c => c.child_id === childId);
   const today = todayISO();
@@ -294,8 +289,8 @@ async function submitNote() {
 
   const ok = await sendToWebhook(WEBHOOKS.notes, payload);
   if (ok) {
-    document.getElementById('noteChild').value = '';
-    document.getElementById('noteText').value = '';
+    document.getElementById('noteChild').value  = '';
+    document.getElementById('noteText').value   = '';
   }
 }
 
@@ -309,14 +304,14 @@ function selectSeverity(el) {
 }
 
 async function submitIncident() {
-  const childId  = document.getElementById('incidentChild').value;
-  const details  = document.getElementById('incidentDetails').value.trim();
-  const action   = document.getElementById('incidentAction').value.trim();
-  const incType  = document.querySelector('input[name="incidentType"]:checked')?.value;
+  const childId = document.getElementById('incidentChild').value;
+  const details = document.getElementById('incidentDetails').value.trim();
+  const action  = document.getElementById('incidentAction').value.trim();
+  const incType = document.querySelector('input[name="incidentType"]:checked')?.value;
 
-  if (!childId)  return showToast('⚠️ اختاري الطفل أولاً', 'error');
-  if (!details)  return showToast('⚠️ أدخلي تفاصيل الحادثة', 'error');
-  if (!action)   return showToast('⚠️ أدخلي الإجراء المتخذ', 'error');
+  if (!childId) return showToast('⚠️ اختاري الطفل أولاً', 'error');
+  if (!details) return showToast('⚠️ أدخلي تفاصيل الحادثة', 'error');
+  if (!action)  return showToast('⚠️ أدخلي الإجراء المتخذ', 'error');
 
   const child = children.find(c => c.child_id === childId);
   const today = todayISO();
@@ -337,9 +332,9 @@ async function submitIncident() {
 
   const ok = await sendToWebhook(WEBHOOKS.incidents, payload);
   if (ok) {
-    document.getElementById('incidentChild').value = '';
+    document.getElementById('incidentChild').value   = '';
     document.getElementById('incidentDetails').value = '';
-    document.getElementById('incidentAction').value = '';
+    document.getElementById('incidentAction').value  = '';
   }
 }
 
@@ -356,16 +351,12 @@ function selectSubject(el) {
 function buildAssessmentGrid() {
   const grid = document.getElementById('assessmentGrid');
   grid.innerHTML = '';
-
   const subject = SUBJECTS[selectedSubject];
   assessmentRatings = {};
 
   children.forEach(child => {
     assessmentRatings[child.child_id] = {};
     subject.skills.forEach(s => { assessmentRatings[child.child_id][s] = 'كويس'; });
-
-    const card = document.createElement('div');
-    card.className = 'assess-card';
 
     const skillRows = subject.skills.map(skill => `
       <div class="assess-skill-row">
@@ -381,6 +372,8 @@ function buildAssessmentGrid() {
       </div>
     `).join('');
 
+    const card = document.createElement('div');
+    card.className = 'assess-card';
     card.innerHTML = `
       <div class="assess-name">👤 ${child.child_name}</div>
       <div class="assess-skills">${skillRows}</div>
@@ -391,27 +384,23 @@ function buildAssessmentGrid() {
 
 function setRating(childId, skill, value, btn) {
   assessmentRatings[childId][skill] = value;
-  const row = btn.closest('.assess-skill-row');
-  row.querySelectorAll('.skill-btn').forEach(b => {
+  btn.closest('.assess-skill-row').querySelectorAll('.skill-btn').forEach(b => {
     b.classList.remove('active-good', 'active-mid', 'active-bad');
   });
-  if (value === 'كويس')           btn.classList.add('active-good');
+  if (value === 'كويس')              btn.classList.add('active-good');
   else if (value === 'يحتاج متابعة') btn.classList.add('active-mid');
-  else                             btn.classList.add('active-bad');
+  else                               btn.classList.add('active-bad');
 }
 
 async function submitAssessments() {
   const subject = SUBJECTS[selectedSubject];
-  const today = todayISO();
+  const today   = todayISO();
 
-  // Only include children with non-"كويس" ratings OR all if teacher wants full report
   const assessments = children.map(child => ({
     child_id: child.child_id,
     child_name: child.child_name,
     ratings: assessmentRatings[child.child_id] || {},
-  })).filter(child =>
-    Object.values(child.ratings).some(r => r !== 'كويس')
-  );
+  })).filter(child => Object.values(child.ratings).some(r => r !== 'كويس'));
 
   if (assessments.length === 0) {
     return showToast('✅ كل الأطفال تقييمهم كويس — لا يوجد ما يُرسَل', 'success');
@@ -458,7 +447,7 @@ async function sendToWebhook(url, payload) {
   } catch (err) {
     showLoading(false);
     console.error('Network error:', err);
-    showToast('❌ تعذر الاتصال — تحققي من الإنترنت', 'error');
+    showToast('❌ تعذر الاتصال بـ n8n — تأكد من تشغيله', 'error');
     return false;
   }
 }
@@ -474,11 +463,9 @@ let toastTimer;
 function showToast(msg, type = '') {
   const toast = document.getElementById('toast');
   toast.textContent = msg;
-  toast.className = 'toast show ' + type;
+  toast.className   = 'toast show ' + type;
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => {
-    toast.classList.remove('show');
-  }, 3200);
+  toastTimer = setTimeout(() => toast.classList.remove('show'), 3200);
 }
 
 function todayISO() {
