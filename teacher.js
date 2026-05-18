@@ -1,72 +1,55 @@
-/* teacher.js — واجهة المعلمة | نسخة مُصلَحة */
+/* teacher.js — واجهة المعلمة | نجوم */
 
 /* ============================
    CONFIG
    ============================ */
-
-// Apps Script — مصدر بيانات الأطفال والـ webhooks
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx3A1Q8h8VCPd8k3CYPffM7rbVXtbe6_UpFu6z5m_AMrhb8wif0tVSSY-pofy9uahlVVQ/exec';
-
-// n8n webhooks — غيري N8N_BASE لما تنشري على VPS
-const N8N_BASE = 'https://chomp-phonebook-evict.ngrok-free.dev/webhook';
-const WEBHOOKS = {
-  attendance:  `${N8N_BASE}/Attendance`,
-  checkout:    `${N8N_BASE}/Checkout`,
-  notes:       `${N8N_BASE}/Notes`,
-  incidents:   `${N8N_BASE}/Incidents`,
-  assessments: `${N8N_BASE}/Assessments`,
-};
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzZvOO382UqsC1hLoooqOtkMgTWDjIbBZlUlzhwIh3h5XeMN3_OWJ5q98Ux-0L2q8_UtA/exec';
 
 /* ============================
    SUBJECTS
    ============================ */
 const SUBJECTS = {
-  arabic_letters:  { label: 'اللغة العربية — الحروف',   skills: ['ذكر الحرف', 'كتابته', 'تمكينه'] },
-  arabic_harakat:  { label: 'اللغة العربية — الحركات',  skills: ['الفتح', 'الضم', 'الكسر', 'المدود'] },
-  math:            { label: 'الحساب',                    skills: ['ذكر الرقم', 'كتابته', 'العد'] },
-  english:         { label: 'الإنجليزي',                 skills: ['ذكر الحرف', 'كتابته', 'تطبيقه'] },
-  islamic:         { label: 'التربية الإسلامية',         skills: ['قرآن', 'حديث', 'أذكار وأدعية'] },
+  arabic_letters: { label: 'اللغة العربية — الحروف',  skills: ['ذكر الحرف', 'كتابته', 'تمكينه'] },
+  arabic_harakat: { label: 'اللغة العربية — الحركات', skills: ['الفتح', 'الضم', 'الكسر', 'المدود'] },
+  math:           { label: 'الحساب',                   skills: ['ذكر الرقم', 'كتابته', 'العد'] },
+  english:        { label: 'الإنجليزي',                skills: ['ذكر الحرف', 'كتابته', 'تطبيقه'] },
+  islamic:        { label: 'التربية الإسلامية',        skills: ['قرآن', 'حديث', 'أذكار وأدعية'] },
 };
 
 /* ============================
    STATE
-   — مفيش حاجة بتتحفظ في localStorage غير إعدادات الجهاز لو احتجنا
-   — teacherName و className بيتدخلوا من المودال كل جلسة
    ============================ */
 let teacherName = '';
 let className   = '';
-let children    = []; // بيتملى من Apps Script
+let children    = [];
 
-let attendanceState   = {}; // child_id → 'present' | 'absent'
+let attendanceState   = {};
 let selectedNoteType  = 'سلوك';
 let selectedSeverity  = 'متوسط';
 let selectedSubject   = 'arabic_letters';
-let assessmentRatings = {}; // child_id → { skill → rating }
+let assessmentRatings = {};
 
 /* ============================
    INIT
    ============================ */
 document.addEventListener('DOMContentLoaded', () => {
   setTodayDate();
-  // المودال يظهر دايماً عند كل فتح جديد للصفحة
   showSetupModal();
 });
 
 function setTodayDate() {
-  const now = new Date();
-  const opts = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-  const str  = now.toLocaleDateString('ar-EG', opts);
-  document.getElementById('todayDate').textContent = str;
-  document.getElementById('attendanceDateBadge').textContent = str;
+  const str = new Date().toLocaleDateString('ar-EG', {
+    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+  });
+  document.getElementById('todayDate').textContent            = str;
+  document.getElementById('attendanceDateBadge').textContent  = str;
 }
 
 /* ============================
    SETUP MODAL
-   — يظهر كل مرة تفتح فيها الصفحة (مفيش localStorage للاسم)
    ============================ */
 function showSetupModal() {
   document.getElementById('setupModal').classList.remove('hidden');
-  // مسح أي قيم قديمة عشان ما تظهرش
   document.getElementById('setupTeacher').value = '';
   document.getElementById('setupClass').value   = 'KG1-A';
 }
@@ -74,7 +57,6 @@ function showSetupModal() {
 async function saveSetup() {
   const t = document.getElementById('setupTeacher').value.trim();
   const c = document.getElementById('setupClass').value;
-
   if (!t) { showToast('⚠️ أدخلي اسمك أولاً', 'error'); return; }
 
   teacherName = t;
@@ -84,39 +66,30 @@ async function saveSetup() {
   document.getElementById('classNameDisplay').textContent   = className;
   document.getElementById('setupModal').classList.add('hidden');
 
-  // جيبي الأطفال من الشيت بعد ما نعرف الفصل
-  await loadChildrenFromSheet(className);
+  await loadChildren(className);
 }
 
 /* ============================
-   LOAD CHILDREN FROM APPS SCRIPT
+   LOAD CHILDREN
    ============================ */
-async function loadChildrenFromSheet(cls) {
+async function loadChildren(cls) {
   showLoading(true);
-
   try {
-    // Apps Script بيستقبل ?action=getChildren&class=KG1-A
-    const url = `${APPS_SCRIPT_URL}?action=getChildren&class=${encodeURIComponent(cls)}`;
-    const res = await fetch(url);
-
-    if (!res.ok) throw new Error('HTTP ' + res.status);
-
+    const url  = `${APPS_SCRIPT_URL}?action=getChildren&class=${encodeURIComponent(cls)}`;
+    const res  = await fetch(url);
     const data = await res.json();
-
-    // بيرجع { success: true, data: [...] } أو { status: 'ok', children: [...] }
     const list = data.children || data.data;
+
     if (data && Array.isArray(list)) {
       children = list.map(c => ({ child_id: c.child_id, child_name: c.child_name }));
     } else {
-      throw new Error('بيانات غير صحيحة من السيرفر');
+      throw new Error('بيانات غير صحيحة');
     }
-
   } catch (err) {
-    console.error('loadChildren error:', err);
-    showToast('⚠️ تعذر تحميل بيانات الأطفال — تحققي من الاتصال', 'error');
-    children = []; // فاضي عشان متشتغلش ببيانات غلط
+    console.error(err);
+    showToast('⚠️ تعذر تحميل بيانات الأطفال', 'error');
+    children = [];
   }
-
   showLoading(false);
   initAll();
 }
@@ -151,7 +124,6 @@ function buildAttendanceGrid() {
     return;
   }
 
-  // الكل حاضر بالـ default
   children.forEach(c => { attendanceState[c.child_id] = 'present'; });
 
   children.forEach(child => {
@@ -184,19 +156,17 @@ function toggleAttendance(childId, card) {
 }
 
 function updateAttendanceSummary() {
-  const vals    = Object.values(attendanceState);
-  const present = vals.filter(s => s === 'present').length;
-  const absent  = vals.filter(s => s === 'absent').length;
-  document.getElementById('presentCount').textContent = present;
-  document.getElementById('absentCount').textContent  = absent;
+  const vals = Object.values(attendanceState);
+  document.getElementById('presentCount').textContent = vals.filter(s => s === 'present').length;
+  document.getElementById('absentCount').textContent  = vals.filter(s => s === 'absent').length;
 }
 
 async function submitAttendance() {
-  if (children.length === 0) return showToast('⚠️ لا يوجد أطفال لإرسال الحضور', 'error');
+  if (children.length === 0) return showToast('⚠️ لا يوجد أطفال', 'error');
 
+  const today   = todayISO();
   const present = children.filter(c => attendanceState[c.child_id] === 'present');
   const absent  = children.filter(c => attendanceState[c.child_id] === 'absent');
-  const today   = todayISO();
 
   const payload = {
     submission_id: `${className.replace('-','')}-${today}-${teacherName.replace(/\s/g,'')}-${uid()}`,
@@ -208,14 +178,14 @@ async function submitAttendance() {
     absent:  absent.map(c => ({ child_id: c.child_id, child_name: c.child_name })),
   };
 
-  await sendToWebhook(WEBHOOKS.attendance, payload);
+  await sendToAppsScript('Attendance', payload);
 }
 
 /* ============================
-   CHECKOUT
+   CHILD SELECTS (Notes + Incidents)
    ============================ */
 function buildChildSelects() {
-  ['checkoutChild', 'noteChild', 'incidentChild'].forEach(id => {
+  ['noteChild', 'incidentChild'].forEach(id => {
     const sel = document.getElementById(id);
     sel.innerHTML = '<option value="">— اختاري —</option>';
     children.forEach(c => {
@@ -225,36 +195,6 @@ function buildChildSelects() {
       sel.appendChild(opt);
     });
   });
-}
-
-async function submitCheckout() {
-  const childId  = document.getElementById('checkoutChild').value;
-  const receiver = document.getElementById('receiverName').value.trim();
-  const recType  = document.querySelector('input[name="receiverType"]:checked')?.value;
-
-  if (!childId)  return showToast('⚠️ اختاري الطفل أولاً', 'error');
-  if (!receiver) return showToast('⚠️ أدخلي اسم المستلِم', 'error');
-
-  const child = children.find(c => c.child_id === childId);
-  const today = todayISO();
-
-  const payload = {
-    submission_id: `${className.replace('-','')}-${today}-checkout-${childId}-${uid()}`,
-    timestamp: new Date().toISOString(),
-    date: today,
-    class: className,
-    teacher: teacherName,
-    child_id: childId,
-    child_name: child.child_name,
-    received_by_type: recType,
-    received_by_name: receiver,
-  };
-
-  const ok = await sendToWebhook(WEBHOOKS.checkout, payload);
-  if (ok) {
-    document.getElementById('checkoutChild').value = '';
-    document.getElementById('receiverName').value  = '';
-  }
 }
 
 /* ============================
@@ -288,10 +228,10 @@ async function submitNote() {
     note: noteText,
   };
 
-  const ok = await sendToWebhook(WEBHOOKS.notes, payload);
+  const ok = await sendToAppsScript('Notes', payload);
   if (ok) {
-    document.getElementById('noteChild').value  = '';
-    document.getElementById('noteText').value   = '';
+    document.getElementById('noteChild').value = '';
+    document.getElementById('noteText').value  = '';
   }
 }
 
@@ -331,7 +271,7 @@ async function submitIncident() {
     action,
   };
 
-  const ok = await sendToWebhook(WEBHOOKS.incidents, payload);
+  const ok = await sendToAppsScript('Incidents', payload);
   if (ok) {
     document.getElementById('incidentChild').value   = '';
     document.getElementById('incidentDetails').value = '';
@@ -350,9 +290,9 @@ function selectSubject(el) {
 }
 
 function buildAssessmentGrid() {
-  const grid = document.getElementById('assessmentGrid');
+  const grid    = document.getElementById('assessmentGrid');
   grid.innerHTML = '';
-  const subject = SUBJECTS[selectedSubject];
+  const subject  = SUBJECTS[selectedSubject];
   assessmentRatings = {};
 
   children.forEach(child => {
@@ -394,17 +334,18 @@ function setRating(childId, skill, value, btn) {
 }
 
 async function submitAssessments() {
-  const subject = SUBJECTS[selectedSubject];
-  const today   = todayISO();
-
-  const assessments = children.map(child => ({
-    child_id: child.child_id,
-    child_name: child.child_name,
-    ratings: assessmentRatings[child.child_id] || {},
-  })).filter(child => Object.values(child.ratings).some(r => r !== 'كويس'));
+  const subject     = SUBJECTS[selectedSubject];
+  const today       = todayISO();
+  const assessments = children
+    .map(child => ({
+      child_id:   child.child_id,
+      child_name: child.child_name,
+      ratings:    assessmentRatings[child.child_id] || {},
+    }))
+    .filter(child => Object.values(child.ratings).some(r => r !== 'كويس'));
 
   if (assessments.length === 0) {
-    return showToast('✅ كل الأطفال تقييمهم كويس — لا يوجد ما يُرسَل', 'success');
+    return showToast('✅ كل الأطفال تقييمهم كويس', 'success');
   }
 
   const payload = {
@@ -419,32 +360,26 @@ async function submitAssessments() {
     assessments,
   };
 
-  await sendToWebhook(WEBHOOKS.assessments, payload);
+  await sendToAppsScript('Assessments', payload);
 }
 
 /* ============================
-   HTTP HELPER
+   HTTP HELPER — Apps Script فقط
    ============================ */
-async function sendToWebhook(url, payload) {
+async function sendToAppsScript(action, payload) {
   showLoading(true);
-
-  // استخرج اسم الـ action من الـ URL (آخر جزء)
-  const action = url.split('/').pop();
-
   try {
-    const res = await fetch(APPS_SCRIPT_URL, {
+    await fetch(APPS_SCRIPT_URL, {
       method: 'POST',
       mode: 'no-cors',
       body: JSON.stringify({ action, payload }),
     });
-
     showLoading(false);
-    // no-cors مش بيرجع response — لو وصل من غير exception يبقى تمام
     showToast('✅ تم الإرسال بنجاح!', 'success');
     return true;
   } catch (err) {
     showLoading(false);
-    console.error('Network error:', err);
+    console.error(err);
     showToast('❌ تعذر الاتصال — تحققي من الإنترنت', 'error');
     return false;
   }
@@ -459,7 +394,7 @@ function showLoading(show) {
 
 let toastTimer;
 function showToast(msg, type = '') {
-  const toast = document.getElementById('toast');
+  const toast   = document.getElementById('toast');
   toast.textContent = msg;
   toast.className   = 'toast show ' + type;
   clearTimeout(toastTimer);
