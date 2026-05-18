@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+  <title>نجوم — واجهة المعلمة</title>
+  <link rel="stylesheet" href="teacher.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+</head>
+<body>
+
+  <!-- TOP BAR -->
+  <header class="topbar">
+    <div class="topbar-logo">
+      <span class="logo-star">★</span>
+      <span class="logo-text">نجوم</span>
+    </div>
+    <div class="topbar-center">
+      <span class="teacher-name" id="teacherNameDisplay">Miss Sara</span>
+      <span class="sep">·</span>
+      <span class="class-name" id="classNameDisplay">KG1-A</span>
+    </div>
+    <div class="topbar-date" id="todayDate"></div>
+  </header>
+
+  <!-- SETUP MODAL (first visit) -->
+  <div class="modal-overlay" id="setupModal">
+    <div class="modal-box">
+      <div class="modal-icon">👩‍🏫</div>
+      <h2 class="modal-title">أهلاً بك في نجوم</h2>
+      <p class="modal-sub">أدخلي بياناتك مرة واحدة فقط</p>
+      <div class="field-group">
+        <label>اسم المعلمة</label>
+        <input type="text" id="setupTeacher" placeholder="Miss Sara" />
+      </div>
+      <div class="field-group">
+        <label>الفصل الدراسي</label>
+        <select id="setupClass">
+          <option value="KG1-A">KG1 — A</option>
+          <option value="KG1-B">KG1 — B</option>
+          <option value="KG2-A">KG2 — A</option>
+          <option value="KG2-B">KG2 — B</option>
+          <option value="Nursery-A">Nursery — A</option>
+          <option value="Nursery-B">Nursery — B</option>
+        </select>
+      </div>
+      <button class="btn-primary full" onclick="saveSetup()">ابدأي العمل ←</button>
+    </div>
+  </div>
+
+  <!-- TABS -->
+  <nav class="tabs">
+    <button class="tab active" data-tab="attendance" onclick="switchTab('attendance', this)">
+      <span class="tab-icon">📋</span>
+      <span class="tab-label">الحضور</span>
+    </button>
+    <button class="tab" data-tab="checkout" onclick="switchTab('checkout', this)">
+      <span class="tab-icon">🏠</span>
+      <span class="tab-label">الانصراف</span>
+    </button>
+    <button class="tab" data-tab="notes" onclick="switchTab('notes', this)">
+      <span class="tab-icon">📝</span>
+      <span class="tab-label">الملاحظات</span>
+    </button>
+    <button class="tab" data-tab="incidents" onclick="switchTab('incidents', this)">
+      <span class="tab-icon">🚨</span>
+      <span class="tab-label">الحوادث</span>
+    </button>
+    <button class="tab" data-tab="assessments" onclick="switchTab('assessments', this)">
+      <span class="tab-icon">📊</span>
+      <span class="tab-label">التقييمات</span>
+    </button>
+  </nav>
+
+  <main class="main">
+
+    <!-- ======= TAB 1: ATTENDANCE ======= -->
+    <section class="tab-content active" id="tab-attendance">
+      <div class="section-header">
+        <div>
+          <h2 class="section-title">تسجيل الحضور</h2>
+          <p class="section-sub">اختاري الغائبين فقط — الباقي حاضر تلقائياً</p>
+        </div>
+        <div class="date-badge" id="attendanceDateBadge"></div>
+      </div>
+
+      <div class="children-grid" id="attendanceGrid"></div>
+
+      <div class="summary-bar" id="attendanceSummary">
+        <span class="sum-item green">✅ حاضرون: <strong id="presentCount">0</strong></span>
+        <span class="sum-item red">❌ غائبون: <strong id="absentCount">0</strong></span>
+      </div>
+
+      <button class="btn-submit" id="attendanceSubmit" onclick="submitAttendance()">
+        <span class="btn-icon">📤</span> إرسال تقرير الحضور
+      </button>
+    </section>
+
+    <!-- ======= TAB 2: CHECKOUT ======= -->
+    <section class="tab-content" id="tab-checkout">
+      <div class="section-header">
+        <div>
+          <h2 class="section-title">تسجيل الانصراف</h2>
+          <p class="section-sub">سجّلي من استلم الطفل</p>
+        </div>
+      </div>
+
+      <div class="form-card">
+        <div class="field-group">
+          <label>اسم الطفل</label>
+          <select id="checkoutChild">
+            <option value="">— اختاري —</option>
+          </select>
+        </div>
+        <div class="field-group">
+          <label>نوع المستلِم</label>
+          <div class="radio-group">
+            <label class="radio-option">
+              <input type="radio" name="receiverType" value="أب" checked /> أب
+            </label>
+            <label class="radio-option">
+              <input type="radio" name="receiverType" value="أم" /> أم
+            </label>
+            <label class="radio-option">
+              <input type="radio" name="receiverType" value="جد" /> جد / جدة
+            </label>
+            <label class="radio-option">
+              <input type="radio" name="receiverType" value="سائق" /> سائق
+            </label>
+            <label class="radio-option">
+              <input type="radio" name="receiverType" value="أخرى" /> أخرى
+            </label>
+          </div>
+        </div>
+        <div class="field-group">
+          <label>اسم المستلِم</label>
+          <input type="text" id="receiverName" placeholder="اسم الشخص الذي استلم الطفل" />
+        </div>
+        <button class="btn-submit" onclick="submitCheckout()">
+          <span class="btn-icon">🏠</span> تسجيل الانصراف
+        </button>
+      </div>
+    </section>
+
+    <!-- ======= TAB 3: NOTES ======= -->
+    <section class="tab-content" id="tab-notes">
+      <div class="section-header">
+        <div>
+          <h2 class="section-title">ملاحظة على طفل</h2>
+          <p class="section-sub">سيتم إرسال الملاحظة لولي الأمر فوراً</p>
+        </div>
+      </div>
+
+      <div class="form-card">
+        <div class="field-group">
+          <label>اسم الطفل</label>
+          <select id="noteChild">
+            <option value="">— اختاري —</option>
+          </select>
+        </div>
+        <div class="field-group">
+          <label>نوع الملاحظة</label>
+          <div class="type-cards">
+            <div class="type-card selected" data-value="سلوك" onclick="selectNoteType(this)">
+              <span>⚠️</span>
+              <span>سلوك</span>
+            </div>
+            <div class="type-card" data-value="مستلزمات" onclick="selectNoteType(this)">
+              <span>🎒</span>
+              <span>مستلزمات</span>
+            </div>
+            <div class="type-card" data-value="صحة" onclick="selectNoteType(this)">
+              <span>🏥</span>
+              <span>صحة</span>
+            </div>
+            <div class="type-card" data-value="إيجابية" onclick="selectNoteType(this)">
+              <span>⭐</span>
+              <span>إيجابية</span>
+            </div>
+          </div>
+        </div>
+        <div class="field-group">
+          <label>نص الملاحظة</label>
+          <textarea id="noteText" rows="4" placeholder="اكتبي الملاحظة هنا..."></textarea>
+        </div>
+        <button class="btn-submit" onclick="submitNote()">
+          <span class="btn-icon">📝</span> إرسال الملاحظة
+        </button>
+      </div>
+    </section>
+
+    <!-- ======= TAB 4: INCIDENTS ======= -->
+    <section class="tab-content" id="tab-incidents">
+      <div class="section-header">
+        <div>
+          <h2 class="section-title">تسجيل حادثة</h2>
+          <p class="section-sub">وثّقي الحادثة والإجراء المتخذ</p>
+        </div>
+      </div>
+
+      <div class="form-card">
+        <div class="field-group">
+          <label>اسم الطفل</label>
+          <select id="incidentChild">
+            <option value="">— اختاري —</option>
+          </select>
+        </div>
+        <div class="field-group">
+          <label>نوع الحادثة</label>
+          <div class="radio-group">
+            <label class="radio-option"><input type="radio" name="incidentType" value="وقوع" checked /> وقوع</label>
+            <label class="radio-option"><input type="radio" name="incidentType" value="شجار" /> شجار</label>
+            <label class="radio-option"><input type="radio" name="incidentType" value="مرض" /> مرض</label>
+            <label class="radio-option"><input type="radio" name="incidentType" value="أخرى" /> أخرى</label>
+          </div>
+        </div>
+        <div class="field-group">
+          <label>درجة الخطورة</label>
+          <div class="severity-cards">
+            <div class="severity-card" data-value="بسيط" onclick="selectSeverity(this)">
+              <span>ℹ️</span><span>بسيط</span>
+            </div>
+            <div class="severity-card selected" data-value="متوسط" onclick="selectSeverity(this)">
+              <span>⚠️</span><span>متوسط</span>
+            </div>
+            <div class="severity-card danger" data-value="خطير" onclick="selectSeverity(this)">
+              <span>🚨</span><span>خطير</span>
+            </div>
+          </div>
+        </div>
+        <div class="field-group">
+          <label>تفاصيل الحادثة</label>
+          <textarea id="incidentDetails" rows="3" placeholder="صفي ما حدث..."></textarea>
+        </div>
+        <div class="field-group">
+          <label>الإجراء المتخذ</label>
+          <textarea id="incidentAction" rows="3" placeholder="صفي ما تم عمله..."></textarea>
+        </div>
+        <button class="btn-submit" onclick="submitIncident()">
+          <span class="btn-icon">🚨</span> تسجيل الحادثة
+        </button>
+      </div>
+    </section>
+
+    <!-- ======= TAB 5: ASSESSMENTS ======= -->
+    <section class="tab-content" id="tab-assessments">
+      <div class="section-header">
+        <div>
+          <h2 class="section-title">تقييم الأطفال</h2>
+          <p class="section-sub">اختاري المادة ثم قيّمي كل طفل</p>
+        </div>
+      </div>
+
+      <div class="form-card" style="margin-bottom:1rem">
+        <div class="field-group" style="margin:0">
+          <label>المادة الدراسية</label>
+          <div class="subject-cards" id="subjectCards">
+            <div class="subject-card selected" data-subject="arabic_letters" data-label="اللغة العربية — الحروف" onclick="selectSubject(this)">
+              <span>📖</span><span>عربي — حروف</span>
+            </div>
+            <div class="subject-card" data-subject="arabic_harakat" data-label="اللغة العربية — الحركات" onclick="selectSubject(this)">
+              <span>✍️</span><span>عربي — حركات</span>
+            </div>
+            <div class="subject-card" data-subject="math" data-label="الحساب" onclick="selectSubject(this)">
+              <span>🔢</span><span>حساب</span>
+            </div>
+            <div class="subject-card" data-subject="english" data-label="الإنجليزي" onclick="selectSubject(this)">
+              <span>🔤</span><span>إنجليزي</span>
+            </div>
+            <div class="subject-card" data-subject="islamic" data-label="التربية الإسلامية" onclick="selectSubject(this)">
+              <span>☪️</span><span>إسلامية</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="assessment-grid" id="assessmentGrid"></div>
+
+      <button class="btn-submit" onclick="submitAssessments()">
+        <span class="btn-icon">📊</span> إرسال التقييمات
+      </button>
+    </section>
+
+  </main>
+
+  <!-- TOAST -->
+  <div class="toast" id="toast"></div>
+
+  <!-- LOADING OVERLAY -->
+  <div class="loading-overlay" id="loadingOverlay">
+    <div class="spinner"></div>
+    <div class="loading-text">جاري الإرسال...</div>
+  </div>
+
+  <script src="teacher.js"></script>
+</body>
+</html>

@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>نجوم — نظام إدارة الحضانات</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800;900&family=Tajawal:wght@300;400;500;700;800&display=swap" rel="stylesheet" />
+</head>
+<body>
+
+  <!-- ===== HERO ===== -->
+  <section id="hero">
+    <div class="hero-bg-orbs">
+      <span class="orb orb-1"></span>
+      <span class="orb orb-2"></span>
+      <span class="orb orb-3"></span>
+    </div>
+
+    <nav class="nav">
+      <div class="nav-logo">
+        <span class="logo-star">★</span>
+        <span class="logo-text">نجوم</span>
+      </div>
+      <div class="nav-links">
+        <a href="#features">المميزات</a>
+        <a href="#workflow">كيف يعمل؟</a>
+        <a href="#cta" class="nav-cta">ابدأ الآن</a>
+      </div>
+    </nav>
+
+    <div class="hero-content">
+      <div class="hero-badge">✦ النظام الأذكى لإدارة الحضانات في مصر</div>
+      <h1 class="hero-headline">
+        حضانتك تستحق<br />
+        <span class="gradient-text">نظام بمستوى عالمي</span>
+      </h1>
+      <p class="hero-sub">
+        أرسل تقارير الحضور تلقائياً لأولياء الأمور، تابع كل طفل بدقة، واحصل على لوحة تحكم كاملة — كل ده في ثوانٍ.
+      </p>
+      <div class="hero-actions">
+        <a href="#features" class="btn-primary">شاهد النظام</a>
+        <a href="#workflow" class="btn-ghost">كيف يعمل؟</a>
+      </div>
+
+      <!-- LIVE STATS BAR -->
+      <div class="hero-stats">
+        <div class="stat-item">
+          <span class="stat-num" data-target="247">0</span>
+          <span class="stat-label">طفل مسجل</span>
+        </div>
+        <div class="stat-sep"></div>
+        <div class="stat-item">
+          <span class="stat-num" data-target="98">0</span><span class="stat-pct">%</span>
+          <span class="stat-label">معدل الحضور هذا الأسبوع</span>
+        </div>
+        <div class="stat-sep"></div>
+        <div class="stat-item">
+          <span class="stat-num" data-target="1240">0</span>
+          <span class="stat-label">رسالة أُرسلت لأولياء الأمور</span>
+        </div>
+        <div class="stat-sep"></div>
+        <div class="stat-item">
+          <span class="stat-num" data-target="12">0</span>
+          <span class="stat-label">فصل دراسي</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- DASHBOARD PREVIEW -->
+    <div class="dashboard-preview">
+      <div class="preview-header">
+        <span class="preview-dot red"></span>
+        <span class="preview-dot yellow"></span>
+        <span class="preview-dot green"></span>
+        <span class="preview-title">لوحة تحكم نجوم — حي المعادي</span>
+        <span class="live-badge">🟢 مباشر</span>
+      </div>
+      <div class="preview-body">
+
+        <!-- TOP CARDS -->
+        <div class="preview-cards">
+          <div class="pcard pcard-blue">
+            <div class="pcard-icon">👦</div>
+            <div class="pcard-info">
+              <span class="pcard-num">247</span>
+              <span class="pcard-lbl">إجمالي الأطفال</span>
+            </div>
+            <div class="pcard-trend up">↑ +3 هذا الشهر</div>
+          </div>
+          <div class="pcard pcard-green">
+            <div class="pcard-icon">✅</div>
+            <div class="pcard-info">
+              <span class="pcard-num">231</span>
+              <span class="pcard-lbl">حاضرون اليوم</span>
+            </div>
+            <div class="pcard-trend up">↑ 93.5%</div>
+          </div>
+          <div class="pcard pcard-amber">
+            <div class="pcard-icon">💰</div>
+            <div class="pcard-info">
+              <span class="pcard-num">94%</span>
+              <span class="pcard-lbl">نسبة التحصيل</span>
+            </div>
+            <div class="pcard-trend up">↑ هذا الشهر</div>
+          </div>
+          <div class="pcard pcard-purple">
+            <div class="pcard-icon">📨</div>
+            <div class="pcard-info">
+              <span class="pcard-num">231</span>
+              <span class="pcard-lbl">رسالة أُرسلت اليوم</span>
+            </div>
+            <div class="pcard-trend">تلقائياً ✦</div>
+          </div>
+        </div>
+
+        <!-- MIDDLE ROW -->
+        <div class="preview-mid">
+          <!-- ATTENDANCE CHART -->
+          <div class="preview-chart-box">
+            <div class="box-title">الحضور — آخر 7 أيام</div>
+            <div class="chart-bars">
+              <div class="bar-col">
+                <div class="bar-fill" style="--h:72%"></div>
+                <span>الأحد</span>
+              </div>
+              <div class="bar-col">
+                <div class="bar-fill" style="--h:88%"></div>
+                <span>الإثنين</span>
+              </div>
+              <div class="bar-col">
+                <div class="bar-fill" style="--h:91%"></div>
+                <span>الثلاثاء</span>
+              </div>
+              <div class="bar-col">
+                <div class="bar-fill" style="--h:85%"></div>
+                <span>الأربعاء</span>
+              </div>
+              <div class="bar-col">
+                <div class="bar-fill" style="--h:94%"></div>
+                <span>الخميس</span>
+              </div>
+              <div class="bar-col active">
+                <div class="bar-fill" style="--h:93%"></div>
+                <span>اليوم</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- ACTIVITY FEED -->
+          <div class="preview-feed-box">
+            <div class="box-title">النشاط الحي <span class="live-dot"></span></div>
+            <ul class="feed-list" id="previewFeed">
+              <li class="feed-item" data-type="present">
+                <span class="feed-icon">✅</span>
+                <div class="feed-body">
+                  <strong>أحمد محمد</strong> — وصل الحضانة بأمان
+                  <span class="feed-time">منذ دقيقتين</span>
+                </div>
+              </li>
+              <li class="feed-item" data-type="checkout">
+                <span class="feed-icon">🏠</span>
+                <div class="feed-body">
+                  <strong>فاطمة علي</strong> — انصرفت مع والدتها
+                  <span class="feed-time">منذ 8 دقائق</span>
+                </div>
+              </li>
+              <li class="feed-item" data-type="payment">
+                <span class="feed-icon">💰</span>
+                <div class="feed-body">
+                  <strong>سارة محمود</strong> — دفعت رسوم أبريل
+                  <span class="feed-time">منذ 15 دقيقة</span>
+                </div>
+              </li>
+              <li class="feed-item" data-type="note">
+                <span class="feed-icon">📝</span>
+                <div class="feed-body">
+                  <strong>علي حسن</strong> — ملاحظة: يحتاج مستلزمات
+                  <span class="feed-time">منذ 22 دقيقة</span>
+                </div>
+              </li>
+              <li class="feed-item" data-type="present">
+                <span class="feed-icon">✅</span>
+                <div class="feed-body">
+                  <strong>نور إبراهيم</strong> — وصلت الحضانة بأمان
+                  <span class="feed-time">منذ 30 دقيقة</span>
+                </div>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- TELEGRAM NOTIFICATION PREVIEW -->
+        <div class="preview-telegram">
+          <div class="tg-phone">
+            <div class="tg-bar">
+              <span>Telegram</span>
+              <span class="tg-signal">●●●●</span>
+            </div>
+            <div class="tg-chat">
+              <div class="tg-header">
+                <span class="tg-avatar">🤖</span>
+                <div>
+                  <div class="tg-name">بوت حضانة النجوم</div>
+                  <div class="tg-status">متصل</div>
+                </div>
+              </div>
+              <div class="tg-messages" id="tgMessages">
+                <div class="tg-msg">
+                  <div class="tg-bubble">✅ <strong>أحمد محمد</strong> وصل الحضانة بأمان 🌟<br/>📅 اليوم | 🏫 KG1-A</div>
+                  <span class="tg-ts">08:31 ✓✓</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="tg-caption">
+            <div class="tg-caption-title">📲 إشعارات فورية لأولياء الأمور</div>
+            <div class="tg-caption-sub">كل حدث → رسالة تلقائية على Telegram — بدون أي جهد من المعلمة</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== FEATURES ===== -->
+  <section id="features">
+    <div class="section-label">✦ المميزات الأساسية</div>
+    <h2 class="section-title">كل اللي محتاجه في مكان واحد</h2>
+    <p class="section-sub">من الحضور للمدفوعات للتقييمات — النظام يتكفل بكل شيء تلقائياً</p>
+
+    <div class="features-grid">
+
+      <div class="feat-card feat-large">
+        <div class="feat-icon-wrap blue">📋</div>
+        <h3>تسجيل الحضور في ثوانٍ</h3>
+        <p>المعلمة تسجل الحضور من موبايلها، وفي نفس اللحظة يُرسَل إشعار لكل ولي أمر يُعلمه أن طفله وصل بأمان.</p>
+        <div class="feat-tag">توفير 30 دقيقة يومياً</div>
+      </div>
+
+      <div class="feat-card">
+        <div class="feat-icon-wrap green">🏠</div>
+        <h3>تسجيل الانصراف</h3>
+        <p>توثيق من استلم الطفل فوراً، مع إشعار للأهل.</p>
+        <div class="feat-tag">أمان تام</div>
+      </div>
+
+      <div class="feat-card">
+        <div class="feat-icon-wrap amber">💰</div>
+        <h3>تتبع المدفوعات</h3>
+        <p>اعرف من دفع ومن لأ، وأرسل إيصالات تلقائية.</p>
+        <div class="feat-tag">لا فاقد مالي</div>
+      </div>
+
+      <div class="feat-card feat-large feat-reverse">
+        <div class="feat-icon-wrap purple">📊</div>
+        <h3>تقارير وتقييمات أكاديمية</h3>
+        <p>قيّم كل طفل في مواده الدراسية وأرسل التقرير لأهله مباشرة، بشكل منظم واحترافي يعكس مستوى حضانتك.</p>
+        <div class="feat-tag">تميز عن المنافسين</div>
+      </div>
+
+      <div class="feat-card">
+        <div class="feat-icon-wrap red">🚨</div>
+        <h3>إدارة الحوادث</h3>
+        <p>سجّل أي حادثة فوراً وأبلغ الأهل بالإجراء المتخذ.</p>
+        <div class="feat-tag">شفافية كاملة</div>
+      </div>
+
+      <div class="feat-card">
+        <div class="feat-icon-wrap teal">📝</div>
+        <h3>ملاحظات المعلمة</h3>
+        <p>أرسل ملاحظات سلوكية وطلبات المستلزمات لأولياء الأمور.</p>
+        <div class="feat-tag">تواصل مستمر</div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ===== WORKFLOW ===== -->
+  <section id="workflow">
+    <div class="section-label">✦ كيف يعمل النظام؟</div>
+    <h2 class="section-title">بسيط بالنسبة للمعلمة<br/><span class="gradient-text">قوي بالنسبة للإدارة</span></h2>
+
+    <div class="workflow-steps">
+      <div class="wf-step">
+        <div class="wf-num">١</div>
+        <div class="wf-icon">📱</div>
+        <h4>المعلمة تسجّل</h4>
+        <p>تفتح الفورم من موبايلها وتسجل الحضور أو الحادثة في ثوانٍ</p>
+      </div>
+      <div class="wf-arrow">←</div>
+      <div class="wf-step">
+        <div class="wf-num">٢</div>
+        <div class="wf-icon">⚡</div>
+        <h4>النظام يعالج</h4>
+        <p>البيانات تُحفظ تلقائياً في قاعدة البيانات وتُعالج فوراً</p>
+      </div>
+      <div class="wf-arrow">←</div>
+      <div class="wf-step">
+        <div class="wf-num">٣</div>
+        <div class="wf-icon">📲</div>
+        <h4>الأهل يستقبلون</h4>
+        <p>إشعار فوري على Telegram لولي الأمر بكل التفاصيل</p>
+      </div>
+      <div class="wf-arrow">←</div>
+      <div class="wf-step">
+        <div class="wf-num">٤</div>
+        <div class="wf-icon">📊</div>
+        <h4>المديرة تتابع</h4>
+        <p>لوحة تحكم حية تعرض كل شيء — من أي مكان وفي أي وقت</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== TRUST SECTION ===== -->
+  <section id="trust">
+    <div class="trust-inner">
+      <div class="trust-headline">
+        <div class="section-label">✦ لماذا نجوم؟</div>
+        <h2 class="section-title" style="margin-bottom:1rem">ثقة حضانتك تبدأ من هنا</h2>
+      </div>
+      <div class="trust-grid">
+        <div class="trust-card">
+          <div class="trust-num">0</div>
+          <div class="trust-desc">أخطاء في تسجيل الحضور</div>
+        </div>
+        <div class="trust-card">
+          <div class="trust-num">100%</div>
+          <div class="trust-desc">أولياء أمور يستقبلون إشعارات فورية</div>
+        </div>
+        <div class="trust-card">
+          <div class="trust-num">3×</div>
+          <div class="trust-desc">أسرع من الأنظمة الورقية</div>
+        </div>
+        <div class="trust-card">
+          <div class="trust-num">24/7</div>
+          <div class="trust-desc">بياناتك محفوظة وآمنة دائماً</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== CLASSES DEMO ===== -->
+  <section id="classes-demo">
+    <div class="section-label">✦ إدارة الفصول</div>
+    <h2 class="section-title">كل فصل تحت عينك</h2>
+    <div class="classes-grid">
+      <div class="class-card" onclick="openClassModal(this)" data-class="KG1-A" data-teacher="Miss Sara" data-count="22" data-present="21">
+        <div class="class-header">
+          <span class="class-name">KG1 — A</span>
+          <span class="class-badge present">21 / 22</span>
+        </div>
+        <div class="class-meta">👩‍🏫 Miss Sara</div>
+        <div class="class-bar"><div class="class-bar-fill" style="width:95%"></div></div>
+        <div class="class-footer">
+          <span class="status-dot green"></span> نسبة حضور 95%
+        </div>
+      </div>
+      <div class="class-card" onclick="openClassModal(this)" data-class="KG1-B" data-teacher="Miss Nour" data-count="20" data-present="18">
+        <div class="class-header">
+          <span class="class-name">KG1 — B</span>
+          <span class="class-badge present">18 / 20</span>
+        </div>
+        <div class="class-meta">👩‍🏫 Miss Nour</div>
+        <div class="class-bar"><div class="class-bar-fill" style="width:90%"></div></div>
+        <div class="class-footer">
+          <span class="status-dot green"></span> نسبة حضور 90%
+        </div>
+      </div>
+      <div class="class-card" onclick="openClassModal(this)" data-class="KG2-A" data-teacher="Miss Heba" data-count="24" data-present="20">
+        <div class="class-header">
+          <span class="class-name">KG2 — A</span>
+          <span class="class-badge warning">20 / 24</span>
+        </div>
+        <div class="class-meta">👩‍🏫 Miss Heba</div>
+        <div class="class-bar"><div class="class-bar-fill" style="width:83%"></div></div>
+        <div class="class-footer">
+          <span class="status-dot amber"></span> نسبة حضور 83%
+        </div>
+      </div>
+      <div class="class-card" onclick="openClassModal(this)" data-class="KG2-B" data-teacher="Miss Dina" data-count="21" data-present="21">
+        <div class="class-header">
+          <span class="class-name">KG2 — B</span>
+          <span class="class-badge present">21 / 21</span>
+        </div>
+        <div class="class-meta">👩‍🏫 Miss Dina</div>
+        <div class="class-bar"><div class="class-bar-fill" style="width:100%"></div></div>
+        <div class="class-footer">
+          <span class="status-dot green"></span> حضور كامل 🎉
+        </div>
+      </div>
+      <div class="class-card" onclick="openClassModal(this)" data-class="Nursery-A" data-teacher="Miss Rania" data-count="18" data-present="16">
+        <div class="class-header">
+          <span class="class-name">Nursery — A</span>
+          <span class="class-badge present">16 / 18</span>
+        </div>
+        <div class="class-meta">👩‍🏫 Miss Rania</div>
+        <div class="class-bar"><div class="class-bar-fill" style="width:89%"></div></div>
+        <div class="class-footer">
+          <span class="status-dot green"></span> نسبة حضور 89%
+        </div>
+      </div>
+      <div class="class-card add-class-card">
+        <div class="add-class-icon">+</div>
+        <div class="add-class-text">إضافة فصل جديد</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== CTA ===== -->
+  <section id="cta">
+    <div class="cta-inner">
+      <div class="cta-orb"></div>
+      <div class="section-label" style="color:#a5b4fc">✦ ابدأ اليوم</div>
+      <h2 class="cta-title">حضانتك تستحق التميز</h2>
+      <p class="cta-sub">انضم للمنظومة الاحترافية التي تثق بها الحضانات الناجحة<br/>إعداد كامل خلال يوم واحد — بدون أي تعقيد تقني</p>
+      <a href="mailto:info@nojoom.app" class="btn-cta">تواصل معنا الآن ←</a>
+      <div class="cta-note">✓ إعداد مجاني &nbsp;&nbsp; ✓ تدريب كامل للفريق &nbsp;&nbsp; ✓ دعم فني مستمر</div>
+    </div>
+  </section>
+
+  <!-- ===== FOOTER ===== -->
+  <footer class="footer">
+    <div class="footer-logo">
+      <span class="logo-star">★</span>
+      <span class="logo-text">نجوم</span>
+    </div>
+    <div class="footer-note">نظام إدارة الحضانات الأذكى © 2026</div>
+  </footer>
+
+  <!-- ===== CLASS MODAL ===== -->
+  <div id="classModal" class="modal-overlay" onclick="closeModal(event)">
+    <div class="modal-box">
+      <button class="modal-close" onclick="document.getElementById('classModal').classList.remove('open')">✕</button>
+      <div class="modal-title" id="modalTitle">فصل KG1-A</div>
+      <div class="modal-meta" id="modalMeta"></div>
+      <div class="modal-children" id="modalChildren"></div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

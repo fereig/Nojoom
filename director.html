@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+  <title>نجوم — لوحة المديرة</title>
+  <link rel="stylesheet" href="director.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+</head>
+<body>
+
+  <!-- TOP BAR -->
+  <header class="topbar">
+    <div class="topbar-logo">
+      <span class="logo-star">★</span>
+      <span class="logo-text">نجوم</span>
+      <span class="role-badge">المديرة</span>
+    </div>
+    <div class="topbar-right">
+      <span class="topbar-date" id="todayDate"></span>
+      <button class="refresh-btn" onclick="loadDashboard()" title="تحديث البيانات">↻</button>
+    </div>
+  </header>
+
+  <!-- TABS -->
+  <nav class="tabs">
+    <button class="tab active" onclick="switchTab('dashboard', this)">
+      <span class="tab-icon">📊</span>
+      <span class="tab-label">الداشبورد</span>
+    </button>
+    <button class="tab" onclick="switchTab('register', this)">
+      <span class="tab-icon">➕</span>
+      <span class="tab-label">تسجيل طالب</span>
+    </button>
+    <button class="tab" onclick="switchTab('payments', this)">
+      <span class="tab-icon">💰</span>
+      <span class="tab-label">المدفوعات</span>
+    </button>
+  </nav>
+
+  <main class="main">
+
+    <!-- ======= TAB 1: DASHBOARD ======= -->
+    <section class="tab-content active" id="tab-dashboard">
+
+      <!-- KPI CARDS -->
+      <div class="kpi-grid" id="kpiGrid">
+        <div class="kpi-card blue skeleton">
+          <div class="kpi-icon">👦</div>
+          <div class="kpi-body">
+            <div class="kpi-num" id="kpiTotal">—</div>
+            <div class="kpi-label">إجمالي الأطفال</div>
+          </div>
+          <div class="kpi-trend" id="kpiTotalTrend"></div>
+        </div>
+        <div class="kpi-card green skeleton">
+          <div class="kpi-icon">✅</div>
+          <div class="kpi-body">
+            <div class="kpi-num" id="kpiPresent">—</div>
+            <div class="kpi-label">حاضرون اليوم</div>
+          </div>
+          <div class="kpi-trend" id="kpiPresentTrend"></div>
+        </div>
+        <div class="kpi-card amber skeleton">
+          <div class="kpi-icon">💰</div>
+          <div class="kpi-body">
+            <div class="kpi-num" id="kpiPayments">—</div>
+            <div class="kpi-label">تحصيل هذا الشهر</div>
+          </div>
+          <div class="kpi-trend" id="kpiPaymentsTrend"></div>
+        </div>
+        <div class="kpi-card red skeleton">
+          <div class="kpi-icon">⚠️</div>
+          <div class="kpi-body">
+            <div class="kpi-num" id="kpiUnpaid">—</div>
+            <div class="kpi-label">غير مدفوع</div>
+          </div>
+          <div class="kpi-trend" id="kpiUnpaidTrend"></div>
+        </div>
+      </div>
+
+      <!-- CLASSES SUMMARY -->
+      <div class="section-title-row">
+        <h3 class="section-heading">الفصول الدراسية</h3>
+        <span class="section-sub-label" id="lastUpdated"></span>
+      </div>
+      <div class="classes-list" id="classesList">
+        <div class="loading-placeholder">⏳ جاري تحميل البيانات...</div>
+      </div>
+
+      <!-- ATTENDANCE CHART -->
+      <div class="section-title-row" style="margin-top:1.5rem">
+        <h3 class="section-heading">الحضور — آخر 7 أيام</h3>
+      </div>
+      <div class="chart-card">
+        <canvas id="attendanceChart" height="160"></canvas>
+      </div>
+
+      <!-- RECENT PAYMENTS -->
+      <div class="section-title-row" style="margin-top:1.5rem">
+        <h3 class="section-heading">آخر المدفوعات</h3>
+      </div>
+      <div class="payments-list" id="recentPaymentsList">
+        <div class="loading-placeholder">⏳ جاري التحميل...</div>
+      </div>
+
+      <!-- INCIDENTS & NOTES -->
+      <div class="section-title-row" style="margin-top:1.5rem">
+        <h3 class="section-heading">آخر الحوادث والملاحظات</h3>
+      </div>
+      <div class="incidents-list" id="incidentsList">
+        <div class="loading-placeholder">⏳ جاري التحميل...</div>
+      </div>
+
+    </section>
+
+    <!-- ======= TAB 2: REGISTER ======= -->
+    <section class="tab-content" id="tab-register">
+      <div class="section-header">
+        <div>
+          <h2 class="section-title">تسجيل طالب جديد</h2>
+          <p class="section-sub">البيانات تُحفظ تلقائياً في قاعدة البيانات</p>
+        </div>
+      </div>
+
+      <div class="form-card">
+
+        <div class="form-row">
+          <div class="field-group">
+            <label>اسم الطفل <span class="req">*</span></label>
+            <input type="text" id="regChildName" placeholder="الاسم كاملاً" />
+          </div>
+          <div class="field-group">
+            <label>الفصل الدراسي <span class="req">*</span></label>
+            <select id="regClass">
+              <option value="">— اختاري —</option>
+              <option value="KG1-A">KG1 — A</option>
+              <option value="KG1-B">KG1 — B</option>
+              <option value="KG2-A">KG2 — A</option>
+              <option value="KG2-B">KG2 — B</option>
+              <option value="Nursery-A">Nursery — A</option>
+              <option value="Nursery-B">Nursery — B</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="field-group">
+            <label>تاريخ الميلاد</label>
+            <input type="date" id="regBirthDate" />
+          </div>
+          <div class="field-group">
+            <label>الجنس</label>
+            <div class="radio-group">
+              <label class="radio-option">
+                <input type="radio" name="gender" value="male" checked /> ذكر
+              </label>
+              <label class="radio-option">
+                <input type="radio" name="gender" value="female" /> أنثى
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="form-row">
+          <div class="field-group">
+            <label>اسم ولي الأمر <span class="req">*</span></label>
+            <input type="text" id="regParentName" placeholder="الاسم كاملاً" />
+          </div>
+          <div class="field-group">
+            <label>رقم الهاتف <span class="req">*</span></label>
+            <input type="tel" id="regPhone" placeholder="01xxxxxxxxx" dir="ltr" />
+          </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="form-row">
+          <div class="field-group">
+            <label>الرسوم الشهرية (جنيه) <span class="req">*</span></label>
+            <input type="number" id="regFee" placeholder="1500" min="0" />
+          </div>
+          <div class="field-group">
+            <label>نوع الدفع</label>
+            <div class="radio-group">
+              <label class="radio-option">
+                <input type="radio" name="paymentType" value="monthly" checked /> شهري
+              </label>
+              <label class="radio-option">
+                <input type="radio" name="paymentType" value="termly" /> ترمي
+              </label>
+              <label class="radio-option">
+                <input type="radio" name="paymentType" value="yearly" /> سنوي
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <button class="btn-submit" onclick="submitRegister()">
+          <span>➕</span> تسجيل الطالب
+        </button>
+
+      </div>
+    </section>
+
+    <!-- ======= TAB 3: PAYMENTS ======= -->
+    <section class="tab-content" id="tab-payments">
+      <div class="section-header">
+        <div>
+          <h2 class="section-title">إدخال دفعة</h2>
+          <p class="section-sub">تُرسَل إيصال تلقائي لولي الأمر على Telegram</p>
+        </div>
+      </div>
+
+      <div class="form-card" style="margin-bottom:1.5rem">
+        <div class="form-row">
+          <div class="field-group">
+            <label>الفصل</label>
+            <select id="payClass" onchange="filterPayChildren()">
+              <option value="">— كل الفصول —</option>
+              <option value="KG1-A">KG1 — A</option>
+              <option value="KG1-B">KG1 — B</option>
+              <option value="KG2-A">KG2 — A</option>
+              <option value="KG2-B">KG2 — B</option>
+              <option value="Nursery-A">Nursery — A</option>
+              <option value="Nursery-B">Nursery — B</option>
+            </select>
+          </div>
+          <div class="field-group">
+            <label>اسم الطفل <span class="req">*</span></label>
+            <select id="payChild">
+              <option value="">— اختاري —</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="field-group">
+            <label>المبلغ المدفوع (جنيه) <span class="req">*</span></label>
+            <input type="number" id="payAmount" placeholder="1500" min="0" />
+          </div>
+          <div class="field-group">
+            <label>الشهر <span class="req">*</span></label>
+            <input type="month" id="payMonth" />
+          </div>
+        </div>
+        <button class="btn-submit" onclick="submitPayment()">
+          <span>💰</span> تسجيل الدفعة
+        </button>
+      </div>
+
+      <!-- PAYMENT STATUS TABLE -->
+      <div class="section-title-row">
+        <h3 class="section-heading">حالة التحصيل — هذا الشهر</h3>
+        <button class="refresh-btn" onclick="loadPaymentStatus()">↻</button>
+      </div>
+      <div class="pay-status-list" id="payStatusList">
+        <div class="loading-placeholder">⏳ جاري التحميل...</div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- TOAST -->
+  <div class="toast" id="toast"></div>
+
+  <!-- LOADING -->
+  <div class="loading-overlay" id="loadingOverlay">
+    <div class="spinner"></div>
+    <div class="loading-text">جاري التحميل...</div>
+  </div>
+
+  <script src="director.js"></script>
+</body>
+</html>
