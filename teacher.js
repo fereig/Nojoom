@@ -103,9 +103,10 @@ async function loadChildrenFromSheet(cls) {
 
     const data = await res.json();
 
-    // المفروض يرجع { children: [{child_id, child_name}, ...] }
-    if (data && Array.isArray(data.children)) {
-      children = data.children;
+    // بيرجع { success: true, data: [...] } أو { status: 'ok', children: [...] }
+    const list = data.children || data.data;
+    if (data && Array.isArray(list)) {
+      children = list.map(c => ({ child_id: c.child_id, child_name: c.child_name }));
     } else {
       throw new Error('بيانات غير صحيحة من السيرفر');
     }
