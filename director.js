@@ -109,15 +109,7 @@ function searchPayChild() {
 
   box.style.display = 'block';
 }
-function selectChild(id, name, cls) {
-  document.getElementById('payChildSearch').value          = name;
-  document.getElementById('payChildSuggestions').style.display = 'none';
-  const btn             = document.getElementById('paySubmitBtn');
-  btn.dataset.childId   = id;
-  btn.dataset.childName = name;
-  btn.dataset.class     = cls;
-  btn.disabled          = false;
-}
+
 /* ============================
    LOAD DASHBOARD
    ============================ */
