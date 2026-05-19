@@ -3,91 +3,46 @@
 /* ============================
    CONFIG
    ============================ */
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzt35Dy4zPFqytxd2HcidG8KGmvymkKa492NgM03P8d7yz70rgXyDcEaY6-RLYr_kMmEQ/exec';
-const N8N_BASE = 'http://localhost:5678/webhook'; // غيري لـ VPS عند النشر
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyOAJrciJcnSXsxCUsMXQcqCablNhRx_3x75Sm_XAiqW6B_BfwL_K2hW4HY1cm6TrM2Fw/exec';
+
+const N8N_BASE = 'http://localhost:5678/webhook';
 const WEBHOOKS = {
   register: `${N8N_BASE}/RegisterChild`,
   payments: `${N8N_BASE}/Payments`,
 };
 
 /* ============================
-   CHILDREN DATA (local fallback)
+   JSONP HELPER
    ============================ */
-const LOCAL_CHILDREN = {
-  'KG1-A':    [
-    { child_id:'KG1A-01', child_name:'أحمد محمد',   class:'KG1-A' },
-    { child_id:'KG1A-02', child_name:'فاطمة علي',   class:'KG1-A' },
-    { child_id:'KG1A-03', child_name:'محمد حسن',    class:'KG1-A' },
-    { child_id:'KG1A-04', child_name:'سارة إبراهيم', class:'KG1-A' },
-    { child_id:'KG1A-05', child_name:'علي كريم',    class:'KG1-A' },
-    { child_id:'KG1A-06', child_name:'نور طارق',    class:'KG1-A' },
-  ],
-  'KG1-B':    [
-    { child_id:'KG1B-01', child_name:'مريم خالد',   class:'KG1-B' },
-    { child_id:'KG1B-02', child_name:'يوسف حسين',  class:'KG1-B' },
-    { child_id:'KG1B-03', child_name:'ليلى محمود',  class:'KG1-B' },
-  ],
-  'KG2-A':    [
-    { child_id:'KG2A-01', child_name:'سلمى منصور',  class:'KG2-A' },
-    { child_id:'KG2A-02', child_name:'إياد حسن',    class:'KG2-A' },
-    { child_id:'KG2A-03', child_name:'دينا أحمد',   class:'KG2-A' },
-  ],
-  'KG2-B':    [
-    { child_id:'KG2B-01', child_name:'ماجدة كريم',  class:'KG2-B' },
-    { child_id:'KG2B-02', child_name:'حسام علي',    class:'KG2-B' },
-  ],
-  'Nursery-A':[
-    { child_id:'NURA-01', child_name:'لمار أحمد',   class:'Nursery-A' },
-    { child_id:'NURA-02', child_name:'يزن محمد',    class:'Nursery-A' },
-  ],
-  'Nursery-B':[
-    { child_id:'NURB-01', child_name:'جنا وليد',    class:'Nursery-B' },
-    { child_id:'NURB-02', child_name:'ريم أحمد',    class:'Nursery-B' },
-  ],
-};
+function fetchJSONP(url, callback) {
+  const callbackName = 'cb_' + Math.random().toString(36).slice(2);
+  const script = document.createElement('script');
+  script.src = url + '&callback=' + callbackName;
 
-// Flatten all children
-const ALL_CHILDREN = Object.values(LOCAL_CHILDREN).flat();
+  const timeout = setTimeout(() => {
+    delete window[callbackName];
+    if (document.body.contains(script)) document.body.removeChild(script);
+    console.warn('JSONP timeout:', url);
+    callback(null);
+  }, 10000);
 
-/* ============================
-   DEMO DATA (fallback when Sheets unreachable)
-   ============================ */
-const DEMO_DATA = {
-  totalChildren: 247,
-  presentToday: 231,
-  collectedThisMonth: 182500,
-  unpaidCount: 14,
-  classes: [
-    { name:'KG1-A', teacher:'Miss Sara',  total:22, present:21 },
-    { name:'KG1-B', teacher:'Miss Nour',  total:20, present:18 },
-    { name:'KG2-A', teacher:'Miss Heba',  total:24, present:20 },
-    { name:'KG2-B', teacher:'Miss Dina',  total:21, present:21 },
-    { name:'Nursery-A', teacher:'Miss Rania', total:18, present:16 },
-    { name:'Nursery-B', teacher:'Miss Ola',   total:15, present:14 },
-  ],
-  weeklyAttendance: [72, 88, 91, 85, 94, 93],
-  weekDays: ['الأحد','الإثنين','الثلاثاء','الأربعاء','الخميس','اليوم'],
-  recentPayments: [
-    { child_name:'أحمد محمد',  class:'KG1-A', amount:1500, month:'2026-05', status:'مدفوع' },
-    { child_name:'فاطمة علي',  class:'KG1-A', amount:750,  month:'2026-05', status:'جزئي' },
-    { child_name:'سلمى منصور', class:'KG2-A', amount:1500, month:'2026-05', status:'مدفوع' },
-    { child_name:'يوسف حسين',  class:'KG1-B', amount:1500, month:'2026-05', status:'مدفوع' },
-    { child_name:'ماجدة كريم', class:'KG2-B', amount:0,    month:'2026-05', status:'غير مدفوع' },
-  ],
-  recentIncidents: [
-    { icon:'⚠️', name:'علي كريم',   class:'KG1-A', text:'ملاحظة سلوكية — كان عدوانياً', time:'منذ ساعة' },
-    { icon:'🚨', name:'إياد حسن',   class:'KG2-A', text:'وقوع — إصابة بسيطة في الركبة', time:'منذ 3 ساعات' },
-    { icon:'📝', name:'لمار أحمد',  class:'Nursery-A', text:'مستلزمات — تحتاج كراسة رسم', time:'منذ يوم' },
-  ],
-  paymentStatus: [
-    { child_name:'أحمد محمد',  class:'KG1-A', paid:1500, total:1500, status:'مدفوع' },
-    { child_name:'فاطمة علي',  class:'KG1-A', paid:750,  total:1500, status:'جزئي' },
-    { child_name:'سلمى منصور', class:'KG2-A', paid:1500, total:1500, status:'مدفوع' },
-    { child_name:'يوسف حسين',  class:'KG1-B', paid:0,    total:1500, status:'غير مدفوع' },
-    { child_name:'ماجدة كريم', class:'KG2-B', paid:1500, total:1500, status:'مدفوع' },
-    { child_name:'إياد حسن',   class:'KG2-A', paid:500,  total:1500, status:'جزئي' },
-  ],
-};
+  window[callbackName] = function(data) {
+    clearTimeout(timeout);
+    delete window[callbackName];
+    if (document.body.contains(script)) document.body.removeChild(script);
+    callback(data);
+  };
+
+  script.onerror = function() {
+    clearTimeout(timeout);
+    delete window[callbackName];
+    if (document.body.contains(script)) document.body.removeChild(script);
+    console.warn('JSONP error:', url);
+    callback(null);
+  };
+
+  document.body.appendChild(script);
+}
 
 /* ============================
    INIT
@@ -95,7 +50,6 @@ const DEMO_DATA = {
 document.addEventListener('DOMContentLoaded', () => {
   setTodayDate();
   setDefaultMonth();
-  buildPayChildSelect();
   loadDashboard();
 });
 
@@ -121,22 +75,26 @@ function switchTab(tabId, btn) {
   document.getElementById('tab-' + tabId).classList.add('active');
   btn.classList.add('active');
 
-  if (tabId === 'payments') loadPaymentStatus();
+  if (tabId === 'payments') {
+    loadPayChildren();
+    loadPaymentStatus();
+  }
 }
 
 /* ============================
    LOAD DASHBOARD
-   Tries Apps Script first, falls back to demo data
    ============================ */
-async function loadDashboard() {
+function loadDashboard() {
   document.querySelector('.refresh-btn')?.classList.add('spinning');
   setTimeout(() => document.querySelector('.refresh-btn')?.classList.remove('spinning'), 800);
 
   fetchJSONP(APPS_SCRIPT_URL + '?action=getDashboard', function(data) {
-    if (data && data.totalChildren !== undefined) {
+    if (data && data.status === 'ok') {
+      console.log('✅ Dashboard data:', data);
       renderDashboard(data);
     } else {
-      renderDashboard(DEMO_DATA);
+      console.warn('⚠️ فشل تحميل الداشبورد');
+      renderDashboardEmpty();
     }
     document.getElementById('lastUpdated').textContent =
       'آخر تحديث: ' + new Date().toLocaleTimeString('ar-EG');
@@ -144,37 +102,46 @@ async function loadDashboard() {
 }
 
 function renderDashboard(d) {
-  // KPI
-  animNum('kpiTotal',   d.totalChildren);
-  animNum('kpiPresent', d.presentToday);
+  animNum('kpiTotal',   d.totalChildren        || 0);
+  animNum('kpiPresent', d.presentToday         || 0);
 
   document.getElementById('kpiPayments').textContent =
     (d.collectedThisMonth || 0).toLocaleString('ar-EG') + ' ج';
   document.getElementById('kpiUnpaid').textContent = d.unpaidCount || 0;
 
-  const pct = Math.round((d.presentToday / d.totalChildren) * 100);
+  const pct = d.totalChildren
+    ? Math.round((d.presentToday / d.totalChildren) * 100)
+    : 0;
   document.getElementById('kpiPresentTrend').textContent = `${pct}% من الإجمالي`;
-  document.getElementById('kpiPresentTrend').className = 'kpi-trend ' + (pct >= 90 ? 'up' : 'down');
+  document.getElementById('kpiPresentTrend').className   = 'kpi-trend ' + (pct >= 90 ? 'up' : 'down');
 
-  document.getElementById('kpiTotalTrend').textContent = 'طفل مسجل';
-  document.getElementById('kpiPaymentsTrend').textContent = `هذا الشهر`;
-  document.getElementById('kpiUnpaidTrend').textContent = `لم يدفعوا بعد`;
-  document.getElementById('kpiUnpaidTrend').className = 'kpi-trend down';
+  document.getElementById('kpiTotalTrend').textContent    = 'طفل مسجل';
+  document.getElementById('kpiPaymentsTrend').textContent = 'هذا الشهر';
+  document.getElementById('kpiUnpaidTrend').textContent   = 'لم يدفعوا بعد';
+  document.getElementById('kpiUnpaidTrend').className     = 'kpi-trend down';
 
-  // Remove skeleton
   document.querySelectorAll('.kpi-card').forEach(c => c.classList.remove('skeleton'));
 
-  // Classes
-  renderClasses(d.classes || []);
-
-  // Chart
-  renderChart(d.weeklyAttendance || [], d.weekDays || []);
-
-  // Payments
+  renderClasses(d.classes              || []);
+  renderChart(d.weeklyAttendance       || [], d.weekDays || []);
   renderRecentPayments(d.recentPayments || []);
+  renderIncidents(d.recentIncidents    || []);
+}
 
-  // Incidents
-  renderIncidents(d.recentIncidents || []);
+function renderDashboardEmpty() {
+  ['kpiTotal','kpiPresent'].forEach(id => {
+    document.getElementById(id).textContent = '—';
+  });
+  document.getElementById('kpiPayments').textContent = '—';
+  document.getElementById('kpiUnpaid').textContent   = '—';
+  document.querySelectorAll('.kpi-card').forEach(c => c.classList.remove('skeleton'));
+
+  document.getElementById('classesList').innerHTML =
+    '<div class="loading-placeholder">⚠️ تعذر تحميل البيانات</div>';
+  document.getElementById('recentPaymentsList').innerHTML =
+    '<div class="loading-placeholder">⚠️ تعذر تحميل البيانات</div>';
+  document.getElementById('incidentsList').innerHTML =
+    '<div class="loading-placeholder">⚠️ تعذر تحميل البيانات</div>';
 }
 
 /* ============================
@@ -182,15 +149,17 @@ function renderDashboard(d) {
    ============================ */
 function renderClasses(classes) {
   const list = document.getElementById('classesList');
-  if (!classes.length) { list.innerHTML = '<div class="loading-placeholder">لا توجد بيانات</div>'; return; }
-
+  if (!classes.length) {
+    list.innerHTML = '<div class="loading-placeholder">لا توجد بيانات حضور اليوم</div>';
+    return;
+  }
   list.innerHTML = classes.map(c => {
-    const pct = Math.round((c.present / c.total) * 100);
+    const pct = c.total > 0 ? Math.round((c.present / c.total) * 100) : 0;
     const badgeClass = pct >= 90 ? 'badge-green' : pct >= 75 ? 'badge-amber' : 'badge-red';
     return `
       <div class="class-row">
         <div class="class-row-name">${c.name}</div>
-        <div class="class-row-teacher">👩‍🏫 ${c.teacher}</div>
+        <div class="class-row-teacher">👩‍🏫 ${c.teacher || '—'}</div>
         <div class="class-row-bar-wrap">
           <div class="class-row-bar">
             <div class="class-row-bar-fill" style="width:${pct}%"></div>
@@ -204,38 +173,35 @@ function renderClasses(classes) {
 }
 
 /* ============================
-   CHART (vanilla canvas)
+   CHART
    ============================ */
 function renderChart(values, labels) {
   const canvas = document.getElementById('attendanceChart');
-  const ctx = canvas.getContext('2d');
+  const ctx    = canvas.getContext('2d');
 
-  // HiDPI
-  const dpr = window.devicePixelRatio || 1;
+  const dpr  = window.devicePixelRatio || 1;
   const rect = canvas.getBoundingClientRect();
-  canvas.width = (rect.width || canvas.offsetWidth || 600) * dpr;
+  canvas.width  = (rect.width || canvas.offsetWidth || 600) * dpr;
   canvas.height = 160 * dpr;
   ctx.scale(dpr, dpr);
 
   const W = canvas.width / dpr;
   const H = 160;
-  const pad = { top: 20, bottom: 30, left: 10, right: 10 };
+  const pad = { top:20, bottom:30, left:10, right:10 };
   const chartW = W - pad.left - pad.right;
-  const chartH = H - pad.top - pad.bottom;
-  const max = 100;
+  const chartH = H - pad.top  - pad.bottom;
 
   ctx.clearRect(0, 0, W, H);
 
-  const barW = chartW / values.length * 0.55;
-  const gap = chartW / values.length;
+  const gap  = chartW / (values.length || 1);
+  const barW = gap * 0.55;
 
   values.forEach((val, i) => {
-    const x = pad.left + i * gap + gap * 0.225;
-    const barH = (val / max) * chartH;
-    const y = pad.top + chartH - barH;
+    const x    = pad.left + i * gap + gap * 0.225;
+    const barH = (val / 100) * chartH;
+    const y    = pad.top + chartH - barH;
     const isToday = i === values.length - 1;
 
-    // Bar
     const grad = ctx.createLinearGradient(0, y, 0, y + barH);
     if (isToday) {
       grad.addColorStop(0, 'rgba(59,130,246,0.9)');
@@ -247,18 +213,16 @@ function renderChart(values, labels) {
 
     ctx.fillStyle = grad;
     ctx.beginPath();
-    ctx.roundRect(x, y, barW, barH, [4, 4, 0, 0]);
+    ctx.roundRect(x, y, barW, barH, [4,4,0,0]);
     ctx.fill();
 
-    // Value label
-    ctx.fillStyle = isToday ? '#93c5fd' : 'rgba(155,163,192,0.7)';
-    ctx.font = `${isToday ? 700 : 500} 10px Cairo, sans-serif`;
-    ctx.textAlign = 'center';
+    ctx.fillStyle  = isToday ? '#93c5fd' : 'rgba(155,163,192,0.7)';
+    ctx.font       = `${isToday ? 700 : 500} 10px Cairo, sans-serif`;
+    ctx.textAlign  = 'center';
     ctx.fillText(`${val}%`, x + barW / 2, y - 5);
 
-    // Day label
-    ctx.fillStyle = isToday ? '#e8eaf0' : 'rgba(107,116,148,0.9)';
-    ctx.font = `${isToday ? 600 : 400} 9px Cairo, sans-serif`;
+    ctx.fillStyle  = isToday ? '#e8eaf0' : 'rgba(107,116,148,0.9)';
+    ctx.font       = `${isToday ? 600 : 400} 9px Cairo, sans-serif`;
     ctx.fillText(labels[i] || '', x + barW / 2, H - 8);
   });
 }
@@ -268,8 +232,10 @@ function renderChart(values, labels) {
    ============================ */
 function renderRecentPayments(payments) {
   const list = document.getElementById('recentPaymentsList');
-  if (!payments.length) { list.innerHTML = '<div class="loading-placeholder">لا توجد مدفوعات</div>'; return; }
-
+  if (!payments.length) {
+    list.innerHTML = '<div class="loading-placeholder">لا توجد مدفوعات</div>';
+    return;
+  }
   list.innerHTML = payments.map(p => {
     const icon = p.status === 'مدفوع' ? '✅' : p.status === 'جزئي' ? '🟡' : '❌';
     return `
@@ -286,17 +252,21 @@ function renderRecentPayments(payments) {
 }
 
 /* ============================
-   INCIDENTS & NOTES
+   INCIDENTS
    ============================ */
 function renderIncidents(items) {
   const list = document.getElementById('incidentsList');
-  if (!items.length) { list.innerHTML = '<div class="loading-placeholder">لا توجد حوادث</div>'; return; }
-
+  if (!items.length) {
+    list.innerHTML = '<div class="loading-placeholder">لا توجد حوادث</div>';
+    return;
+  }
   list.innerHTML = items.map(item => `
     <div class="incident-row">
       <span class="inc-icon">${item.icon}</span>
       <div class="inc-info">
-        <div class="inc-name">${item.name} <span style="font-weight:400;color:var(--text-muted)">— ${item.class}</span></div>
+        <div class="inc-name">${item.name}
+          <span style="font-weight:400;color:var(--text-muted)">— ${item.class}</span>
+        </div>
         <div class="inc-meta">${item.text}</div>
       </div>
       <span style="font-size:0.68rem;color:var(--text-muted);white-space:nowrap">${item.time}</span>
@@ -305,25 +275,53 @@ function renderIncidents(items) {
 }
 
 /* ============================
-   PAYMENT STATUS
+   PAYMENTS TAB — تحميل الأطفال من Sheets
    ============================ */
-async function loadPaymentStatus() {
-  fetchJSONP(APPS_SCRIPT_URL + '?action=getPaymentStatus', function(data) {
-    if (data && data.paymentStatus) {
-      renderPaymentStatus(data.paymentStatus);
+function loadPayChildren() {
+  const cls = document.getElementById('payClass').value;
+  const sel = document.getElementById('payChild');
+  sel.innerHTML = '<option value="">⏳ جاري التحميل...</option>';
+
+  const url = cls
+    ? `${APPS_SCRIPT_URL}?action=getChildren&class=${encodeURIComponent(cls)}`
+    : `${APPS_SCRIPT_URL}?action=getAllChildren`;
+
+  fetchJSONP(url, function(data) {
+    sel.innerHTML = '<option value="">— اختاري —</option>';
+    if (data && data.children && data.children.length) {
+      data.children.forEach(c => {
+        const opt = document.createElement('option');
+        opt.value         = c.child_id;
+        opt.dataset.name  = c.child_name;
+        opt.dataset.class = c.class || cls;
+        opt.textContent   = c.child_name + (cls ? '' : ` — ${c.class}`);
+        sel.appendChild(opt);
+      });
     } else {
-      renderPaymentStatus(DEMO_DATA.paymentStatus);
+      sel.innerHTML = '<option value="">⚠️ تعذر تحميل الأطفال</option>';
     }
   });
 }
 
+function loadPaymentStatus() {
+  fetchJSONP(APPS_SCRIPT_URL + '?action=getPaymentStatus', function(data) {
+    if (data && data.paymentStatus) {
+      renderPaymentStatus(data.paymentStatus);
+    } else {
+      document.getElementById('payStatusList').innerHTML =
+        '<div class="loading-placeholder">⚠️ تعذر تحميل البيانات</div>';
+    }
+  });
+}
 
 function renderPaymentStatus(items) {
   const list = document.getElementById('payStatusList');
-  if (!items.length) { list.innerHTML = '<div class="loading-placeholder">لا توجد بيانات</div>'; return; }
-
+  if (!items.length) {
+    list.innerHTML = '<div class="loading-placeholder">لا توجد بيانات</div>';
+    return;
+  }
   list.innerHTML = items.map(p => {
-    const cls = p.status === 'مدفوع' ? 'ps-paid' : p.status === 'جزئي' ? 'ps-partial' : 'ps-unpaid';
+    const cls  = p.status === 'مدفوع' ? 'ps-paid' : p.status === 'جزئي' ? 'ps-partial' : 'ps-unpaid';
     const icon = p.status === 'مدفوع' ? '✅' : p.status === 'جزئي' ? '🟡' : '❌';
     return `
       <div class="pay-status-row">
@@ -350,10 +348,10 @@ async function submitRegister() {
   const fee        = parseFloat(document.getElementById('regFee').value);
   const payType    = document.querySelector('input[name="paymentType"]:checked')?.value;
 
-  if (!childName)  return showToast('⚠️ أدخلي اسم الطفل', 'error');
-  if (!cls)        return showToast('⚠️ اختاري الفصل', 'error');
-  if (!parentName) return showToast('⚠️ أدخلي اسم ولي الأمر', 'error');
-  if (!phone)      return showToast('⚠️ أدخلي رقم الهاتف', 'error');
+  if (!childName)       return showToast('⚠️ أدخلي اسم الطفل', 'error');
+  if (!cls)             return showToast('⚠️ اختاري الفصل', 'error');
+  if (!parentName)      return showToast('⚠️ أدخلي اسم ولي الأمر', 'error');
+  if (!phone)           return showToast('⚠️ أدخلي رقم الهاتف', 'error');
   if (!fee || fee <= 0) return showToast('⚠️ أدخلي الرسوم الشهرية', 'error');
 
   const payload = {
@@ -369,65 +367,43 @@ async function submitRegister() {
 
   const ok = await sendToWebhook(WEBHOOKS.register, payload);
   if (ok) {
-    // Clear form
-    ['regChildName','regParentName','regPhone','regFee','regBirthDate'].forEach(id => {
-      document.getElementById(id).value = '';
-    });
+    ['regChildName','regParentName','regPhone','regFee','regBirthDate']
+      .forEach(id => { document.getElementById(id).value = ''; });
     document.getElementById('regClass').value = '';
   }
 }
 
 /* ============================
-   PAYMENTS
+   SUBMIT PAYMENT
    ============================ */
-function buildPayChildSelect() {
-  filterPayChildren();
-}
-
-function filterPayChildren() {
-  const cls = document.getElementById('payClass').value;
-  const sel = document.getElementById('payChild');
-  const list = cls ? (LOCAL_CHILDREN[cls] || []) : ALL_CHILDREN;
-
-  sel.innerHTML = '<option value="">— اختاري —</option>';
-  list.forEach(c => {
-    const opt = document.createElement('option');
-    opt.value = c.child_id;
-    opt.dataset.name = c.child_name;
-    opt.dataset.class = c.class;
-    opt.textContent = c.child_name + (cls ? '' : ` — ${c.class}`);
-    sel.appendChild(opt);
-  });
-}
-
 async function submitPayment() {
   const childSel = document.getElementById('payChild');
   const childId  = childSel.value;
   const amount   = parseFloat(document.getElementById('payAmount').value);
   const month    = document.getElementById('payMonth').value;
 
-  if (!childId) return showToast('⚠️ اختاري الطفل أولاً', 'error');
-  if (!amount || amount <= 0) return showToast('⚠️ أدخلي المبلغ', 'error');
-  if (!month) return showToast('⚠️ اختاري الشهر', 'error');
+  if (!childId)             return showToast('⚠️ اختاري الطفل أولاً', 'error');
+  if (!amount || amount<=0) return showToast('⚠️ أدخلي المبلغ', 'error');
+  if (!month)               return showToast('⚠️ اختاري الشهر', 'error');
 
-  const opt = childSel.querySelector(`option[value="${childId}"]`);
-  const childName = opt?.dataset.name || '';
-  const cls = opt?.dataset.class || document.getElementById('payClass').value;
+  const opt       = childSel.querySelector(`option[value="${childId}"]`);
+  const childName = opt?.dataset.name  || '';
+  const cls       = opt?.dataset.class || document.getElementById('payClass').value;
 
   const payload = {
     submission_id: `${cls.replace('-','')}-${month}-pay-${childId}-${uid()}`,
-    timestamp: new Date().toISOString(),
-    child_id: childId,
-    child_name: childName,
-    class: cls,
-    amount_paid: amount,
+    timestamp:     new Date().toISOString(),
+    child_id:      childId,
+    child_name:    childName,
+    class:         cls,
+    amount_paid:   amount,
     month,
   };
 
   const ok = await sendToWebhook(WEBHOOKS.payments, payload);
   if (ok) {
     document.getElementById('payAmount').value = '';
-    document.getElementById('payChild').value = '';
+    document.getElementById('payChild').value  = '';
     loadPaymentStatus();
   }
 }
@@ -439,14 +415,15 @@ async function sendToWebhook(url, payload) {
   showLoading(true);
   try {
     const res = await fetch(url, {
-      method: 'POST',
+      method:  'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
+      body:    JSON.stringify(payload),
     });
     showLoading(false);
     if (res.ok) { showToast('✅ تم بنجاح!', 'success'); return true; }
-    showToast('❌ خطأ في الإرسال', 'error'); return false;
-  } catch (err) {
+    showToast('❌ خطأ في الإرسال', 'error');
+    return false;
+  } catch(err) {
     showLoading(false);
     console.error(err);
     showToast('❌ تعذر الاتصال بالسيرفر', 'error');
@@ -458,11 +435,11 @@ async function sendToWebhook(url, payload) {
    HELPERS
    ============================ */
 function animNum(id, target) {
-  const el = document.getElementById(id);
-  const start = performance.now();
+  const el       = document.getElementById(id);
+  const start    = performance.now();
   const duration = 1200;
   function tick(now) {
-    const p = Math.min((now - start) / duration, 1);
+    const p     = Math.min((now - start) / duration, 1);
     const eased = 1 - Math.pow(2, -10 * p);
     el.textContent = Math.round(target * eased).toLocaleString('ar-EG');
     if (p < 1) requestAnimationFrame(tick);
@@ -476,31 +453,11 @@ function showLoading(show) {
 
 let toastTimer;
 function showToast(msg, type = '') {
-  const t = document.getElementById('toast');
+  const t    = document.getElementById('toast');
   t.textContent = msg;
-  t.className = 'toast show ' + type;
+  t.className   = 'toast show ' + type;
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => t.classList.remove('show'), 3200);
-}
-
-function fetchJSONP(url, callback) {
-  const callbackName = 'cb_' + Math.random().toString(36).slice(2);
-  const script = document.createElement('script');
-  script.src = url + '&callback=' + callbackName;
-  
-  window[callbackName] = function(data) {
-    delete window[callbackName];
-    document.body.removeChild(script);
-    callback(data);
-  };
-  
-  script.onerror = function() {
-    delete window[callbackName];
-    document.body.removeChild(script);
-    callback(null);
-  };
-  
-  document.body.appendChild(script);
 }
 
 function uid() {
