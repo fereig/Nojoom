@@ -17,7 +17,7 @@ function fetchJSONP(url, callback) {
     if (document.body.contains(script)) document.body.removeChild(script);
     console.warn('JSONP timeout:', url);
     callback(null);
-  }, 10000);
+  }, 20000);
 
   window[callbackName] = function(data) {
     clearTimeout(timeout);
@@ -91,7 +91,7 @@ function loadDashboard(retryCount = 0) {
       renderDashboard(data);
     } else if (retryCount < 3) {
       // ✅ retry تلقائي بعد ثانيتين
-      setTimeout(() => loadDashboard(retryCount + 1), 2000);
+      setTimeout(() => loadDashboard(retryCount + 1), 3000);
       return;
     } else {
       renderDashboardEmpty();
