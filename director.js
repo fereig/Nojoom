@@ -74,8 +74,7 @@ function switchTab(tabId, btn) {
   btn.classList.add('active');
 
   if (tabId === 'payments') {
-    loadPayChildren();
-    loadPaymentStatus();
+    loadPaymentsTab();
   }
 }
 
@@ -279,35 +278,33 @@ function renderIncidents(items) {
 /* ============================
    PAYMENTS TAB — تحميل الأطفال
    ============================ */
-function loadPayChildren() {
+function loadPaymentsTab() {
   const cls = document.getElementById('payClass').value;
   const sel = document.getElementById('payChild');
   sel.innerHTML = '<option value="">⏳ جاري التحميل...</option>';
+  document.getElementById('payStatusList').innerHTML =
+    '<div class="loading-placeholder">⏳ جاري التحميل...</div>';
 
-  const url = cls
-    ? `${APPS_SCRIPT_URL}?action=getChildren&class=${encodeURIComponent(cls)}`
-    : `${APPS_SCRIPT_URL}?action=getAllChildren`;
+  const url = `${APPS_SCRIPT_URL}?action=getPaymentsTab` +
+    (cls ? `&class=${encodeURIComponent(cls)}` : '');
 
   fetchJSONP(url, function(data) {
+    // أطفال
     sel.innerHTML = '<option value="">— اختاري —</option>';
     if (data && data.children && data.children.length) {
       data.children.forEach(c => {
         const opt = document.createElement('option');
         opt.value         = c.child_id;
         opt.dataset.name  = c.child_name;
-        opt.dataset.class = c.class || cls;
+        opt.dataset.class = c.class;
         opt.textContent   = c.child_name + (cls ? '' : ` — ${c.class}`);
         sel.appendChild(opt);
       });
     } else {
       sel.innerHTML = '<option value="">⚠️ تعذر تحميل الأطفال</option>';
     }
-  });
-}
 
-function loadPaymentStatus() {
-   
-  fetchJSONP(APPS_SCRIPT_URL + '?action=getPaymentStatus', function(data) {
+    // حالة الدفع
     if (data && data.paymentStatus) {
       renderPaymentStatus(data.paymentStatus);
     } else {
@@ -315,6 +312,14 @@ function loadPaymentStatus() {
         '<div class="loading-placeholder">⚠️ تعذر تحميل البيانات</div>';
     }
   });
+}
+
+function filterPayChildren() {
+  loadPaymentsTab();
+}
+
+function loadPaymentStatus() {
+  loadPaymentsTab();
 }
 
 function renderPaymentStatus(items) {
