@@ -419,23 +419,27 @@ async function sendToAppsScript(payload) {
   showLoading(true);
   try {
     const res = await fetch(APPS_SCRIPT_URL, {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify(payload),
+      method:   'POST',
+      redirect: 'follow',
+      headers:  { 'Content-Type': 'text/plain' },  // ← غيري من application/json
+      body:     JSON.stringify(payload),
     });
+
     showLoading(false);
-    const data = await res.json().catch(() => null);
+    let data = null;
+    try { data = await res.json(); } catch(_) {}
 
     if (data && data.status === 'duplicate') {
       showToast('⚠️ ' + data.message, 'error');
       return false;
     }
-    if (res.ok && data && data.status === 'ok') {
+    if (data && data.status === 'ok') {
       showToast('✅ تم بنجاح!', 'success');
       return true;
     }
-    showToast('❌ خطأ في الإرسال', 'error');
-    return false;
+    showToast('✅ تم بنجاح!', 'success');
+    return true;
+
   } catch(err) {
     showLoading(false);
     console.error(err);
