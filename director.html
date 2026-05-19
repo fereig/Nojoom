@@ -208,49 +208,60 @@
     </section>
 
     <!-- ======= TAB 3: PAYMENTS ======= -->
-    <section class="tab-content" id="tab-payments">
-      <div class="section-header">
-        <div>
-          <h2 class="section-title">إدخال دفعة</h2>
-          <p class="section-sub">تُرسَل إيصال تلقائي لولي الأمر على Telegram</p>
-        </div>
-      </div>
+   <!-- ======= TAB 3: PAYMENTS ======= -->
+<section class="tab-content" id="tab-payments">
+  <div class="section-header">
+    <div>
+      <h2 class="section-title">إدخال دفعة</h2>
+      <p class="section-sub">تُرسَل إيصال تلقائي لولي الأمر على Telegram</p>
+    </div>
+  </div>
 
-      <div class="form-card" style="margin-bottom:1.5rem">
-        <div class="form-row">
-          <div class="field-group">
-            <label>الفصل</label>
-            <select id="payClass" onchange="filterPayChildren()">
-              <option value="">— كل الفصول —</option>
-              <option value="KG1-A">KG1 — A</option>
-              <option value="KG1-B">KG1 — B</option>
-              <option value="KG2-A">KG2 — A</option>
-              <option value="KG2-B">KG2 — B</option>
-              <option value="Nursery-A">Nursery — A</option>
-              <option value="Nursery-B">Nursery — B</option>
-            </select>
-          </div>
-          <div class="field-group">
-            <label>اسم الطفل <span class="req">*</span></label>
-            <select id="payChild">
-              <option value="">— اختاري —</option>
-            </select>
-          </div>
-        </div>
-        <div class="form-row">
-          <div class="field-group">
-            <label>المبلغ المدفوع (جنيه) <span class="req">*</span></label>
-            <input type="number" id="payAmount" placeholder="1500" min="0" />
-          </div>
-          <div class="field-group">
-            <label>الشهر <span class="req">*</span></label>
-            <input type="month" id="payMonth" />
-          </div>
-        </div>
-        <button class="btn-submit" onclick="submitPayment()">
-          <span>💰</span> تسجيل الدفعة
-        </button>
+  <div class="form-card" style="margin-bottom:1.5rem">
+    <div class="form-row">
+      <div class="field-group">
+        <label>المبلغ المدفوع (جنيه) <span class="req">*</span></label>
+        <input type="number" id="payAmount" placeholder="1500" min="0" />
       </div>
+      <div class="field-group">
+        <label>الشهر <span class="req">*</span></label>
+        <input type="month" id="payMonth" />
+      </div>
+    </div>
+    <button class="btn-submit" id="paySubmitBtn" onclick="submitPayment()" disabled>
+      <span>💰</span> تسجيل الدفعة
+    </button>
+  </div>
+
+  <!-- SEARCH -->
+  <div class="section-title-row">
+    <h3 class="section-heading">حالة التحصيل — هذا الشهر</h3>
+    <button class="refresh-btn" onclick="loadPaymentsTab()">↻</button>
+  </div>
+  <div class="field-group" style="margin-bottom:1rem">
+    <input type="text" id="paySearch" placeholder="🔍 ابحث باسم الطفل..." 
+      oninput="filterPaymentStatus()" />
+  </div>
+
+  <!-- لم يدفع / جزئي -->
+  <div class="section-title-row">
+    <h3 class="section-heading" style="color:#ef4444">❌ لم يدفع / جزئي</h3>
+    <span id="unpaidCount" style="font-size:0.8rem;color:var(--text-muted)"></span>
+  </div>
+  <div class="pay-status-list" id="unpaidList">
+    <div class="loading-placeholder">⏳ جاري التحميل...</div>
+  </div>
+
+  <!-- دفع كامل -->
+  <div class="section-title-row" style="margin-top:1.5rem">
+    <h3 class="section-heading" style="color:#22c55e">✅ دفعوا كامل</h3>
+    <span id="paidCount" style="font-size:0.8rem;color:var(--text-muted)"></span>
+  </div>
+  <div class="pay-status-list" id="paidList">
+    <div class="loading-placeholder">⏳ جاري التحميل...</div>
+  </div>
+
+</section>
 
       <!-- PAYMENT STATUS TABLE -->
       <div class="section-title-row">
