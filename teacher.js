@@ -3,7 +3,7 @@
 /* ============================
    CONFIG
    ============================ */
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxrYvOlojt-2W1z7u_AOpKXWcMWSQLgz6ZdhiST3NMY8gUApuivCLIgJJeelWarkpst/exec';
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyOAJrciJcnSXsxCUsMXQcqCablNhRx_3x75Sm_XAiqW6B_BfwL_K2hW4HY1cm6TrM2Fw/exec';
 
 /* ============================
    SUBJECTS
