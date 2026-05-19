@@ -548,7 +548,6 @@ function showLoading(show) {
   const el = document.getElementById('loadingOverlay');
   if (el) el.classList.toggle('show', show);
 }
-
 let toastTimer;
 function showToast(msg, type = '') {
   const t    = document.getElementById('toast');
