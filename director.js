@@ -1,375 +1,139 @@
-/* director.js — لوحة المديرة | مٌطور ومسرع للأداء العالي */
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+  <title>نجوم — لوحة المديرة</title>
+  <link rel="stylesheet" href="director.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+</head>
+<body>
 
-/* ============================
-   CONFIG
-   ============================ */
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwET2jd8CtgKvozjNdab7st4GkD8roSqKnY30KyuUzRVpiDcSXTRIBUv0TKfjwwlv_BiQ/exec';
+  <header class="topbar">
+    <div class="topbar-logo">
+      <span class="logo-star">★</span>
+      <span class="logo-text">نجوم</span>
+      <span class="role-badge">المديرة</span>
+    </div>
+    <div class="topbar-right">
+      <span class="topbar-date" id="todayDate"></span>
+      <button class="refresh-btn" onclick="loadDashboard()" title="تحديث البيانات">↻</button>
+    </div>
+  </header>
 
-/* ============================
-   STATE
-   ============================ */
-let allPaymentStatus = [];
+  <nav class="tabs">
+    <button class="tab active" data-tab="dashboard">
+      <span class="tab-icon">📊</span> لوحة التحكم
+    </button>
+    <button class="tab" data-tab="payments">
+      <span class="tab-icon">💰</span> الحسابات والمصاريف
+    </button>
+  </nav>
 
-/* ============================
-   JSONP HELPER
-   ============================ */
-function fetchJSONP(url, callback) {
-  const callbackName = 'cb_' + Math.random().toString(36).slice(2);
-  const script = document.createElement('script');
-  script.src = url + '&callback=' + callbackName;
+  <main class="content-container">
 
-  const timeout = setTimeout(() => {
-    delete window[callbackName];
-    if (document.body.contains(script)) document.body.removeChild(script);
-    console.warn('JSONP timeout:', url);
-    callback(null);
-  }, 20000);
-
-  window[callbackName] = function(data) {
-    clearTimeout(timeout);
-    delete window[callbackName];
-    if (document.body.contains(script)) document.body.removeChild(script);
-    callback(data);
-  };
-
-  script.onerror = function() {
-    clearTimeout(timeout);
-    delete window[callbackName];
-    if (document.body.contains(script)) document.body.removeChild(script);
-    console.error('JSONP script error:', url);
-    callback(null);
-  };
-
-  document.body.appendChild(script);
-}
-
-/* ============================
-   INIT
-   ============================ */
-document.addEventListener('DOMContentLoaded', () => {
-  setupTabs();
-  setTodayDate();
-  
-  // التحميل المبدئي لأول تابة (الداشبورد)
-  loadDashboard();
-});
-
-function setTodayDate() {
-  const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-  const str = new Date().toLocaleDateString('ar-EG', options);
-  const el = document.getElementById('todayDate');
-  if (el) el.textContent = str;
-}
-
-/* ============================
-   TABS LOGIC
-   ============================ */
-function setupTabs() {
-  const tabs = document.querySelectorAll('.tab');
-  tabs.forEach(tab => {
-    tab.addEventListener('click', () => {
-      tabs.forEach(t => t.classList.remove('active'));
-      tab.classList.add('active');
-
-      const target = tab.getAttribute('data-tab');
-      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-      
-      const targetContent = document.getElementById(target + 'Tab');
-      if (targetContent) targetContent.classList.add('active');
-
-      // جلب البيانات ذكياً بحسب التابة النشطة فقط لتوفير الأداء والـ CPU
-      if (target === 'dashboard') {
-        loadDashboard();
-      } else if (target === 'payments') {
-        loadPaymentsTab();
-      }
-    });
-  });
-}
-
-/* ============================
-   DATA LOADING (MODIFIED FOR PERFORMANCE)
-   ============================ */
-
-// 1. تحميل بيانات الداشبورد فقط (مخزنة بالكاش وسريعة جداً)
-function loadDashboard() {
-  showLoading(true);
-  fetchJSONP(APPS_SCRIPT_URL + '?req=dashboard', (data) => {
-    showLoading(false);
-    if (!data) {
-      showToast('❌ فشل تحميل بيانات لوحة التحكم', 'error');
-      return;
-    }
-    animNum('statTotalChildren', data.totalChildren || 0);
-    animNum('statTodayPresent',   data.todayPresent || 0);
-    animNum('statMonthIncidents', data.monthIncidents || 0);
-    animNum('statMonthRevenue',   data.monthRevenue || 0);
-  });
-}
-
-// 2. تحميل تابة المصاريف وقائمة الطلاب فقط
-function loadPaymentsTab() {
-  showLoading(true);
-  fetchJSONP(APPS_SCRIPT_URL + '?req=payments', (data) => {
-    showLoading(false);
-    if (!data || !Array.isArray(data)) {
-      showToast('❌ فشل تحميل بيانات المصاريف', 'error');
-      return;
-    }
-    allPaymentStatus = data;
-    buildPaymentStatusDOM();
-    populatePaymentSelects();
-  });
-}
-
-/* ============================
-   DOM BUILDERS (PAYMENTS)
-   ============================ */
-function buildPaymentStatusDOM() {
-  const unpaidList = document.getElementById('unpaidList');
-  const paidList   = document.getElementById('paidList');
-  
-  if (!unpaidList || !paidList) return;
-
-  unpaidList.innerHTML = '';
-  paidList.innerHTML   = '';
-
-  let unpaidCount = 0;
-  let paidCount   = 0;
-
-  allPaymentStatus.forEach(item => {
-    const card = document.createElement('div');
-    card.className = 'pay-status-card';
-    
-    // تحديد كلاس الحالة للـ UI الحالي
-    let badgeClass = 'status-unpaid';
-    if (item.status === 'دفع كامل') badgeClass = 'status-paid';
-    if (item.status === 'دفع جزئي') badgeClass = 'status-partial';
-
-    card.innerHTML = `
-      <div class="pay-card-main">
-        <span class="pay-child-name">${item.name}</span>
-        <span class="pay-status-badge ${badgeClass}">${item.status}</span>
+    <section id="dashboardTab" class="tab-content active">
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-icon" style="background:#e0f2fe;color:#0284c7">👶</div>
+          <div class="stat-info">
+            <span class="stat-label">إجمالي الأطفال</span>
+            <span class="stat-value" id="statTotalChildren">0</span>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon" style="background:#dcfce7;color:#16a34a">✅</div>
+          <div class="stat-info">
+            <span class="stat-label">حضور اليوم</span>
+            <span class="stat-value" id="statTodayPresent">0</span>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon" style="background:#fee2e2;color:#dc2626">🚨</div>
+          <div class="stat-info">
+            <span class="stat-label">حوادث الشهر</span>
+            <span class="stat-value" id="statMonthIncidents">0</span>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon" style="background:#fef9c3;color:#ca8a04">💵</div>
+          <div class="stat-info">
+            <span class="stat-label">دخل الشهر الحالي</span>
+            <span class="stat-value" id="statMonthRevenue">0</span>
+          </div>
+        </div>
       </div>
-      <div class="pay-card-details">
-        <span>المطلوب: <strong>${item.monthlyFee} ج.م</strong></span>
-        <span>المدفوع: <strong style="color:#22c55e">${item.paid} ج.م</strong></span>
-        <span>المتبقي: <strong style="color:#ef4444">${item.remaining} ج.m</strong></span>
+
+      <div class="card" style="margin-top:1.5rem">
+        <h3 class="card-title">👶 تسجيل طفل جديد بالنظام</h3>
+        <div class="field-group">
+          <label>اسم الطفل ثلاثي</label>
+          <input type="text" id="regName" placeholder="مثال: محمد أحمد محمود" />
+        </div>
+        <div class="field-group">
+          <label>المصاريف الشهرية المستحقة (ج.م)</label>
+          <input type="number" id="regFee" placeholder="مثال: 500" />
+        </div>
+        <button class="btn-submit" onclick="submitRegister()">
+          <span>➕</span> تسجيل الطفل في الروضة
+        </button>
       </div>
-    `;
+    </section>
 
-    if (item.status === 'دفع كامل') {
-      paidList.appendChild(card);
-      paidCount++;
-    } else {
-      unpaidList.appendChild(card);
-      unpaidCount++;
-    }
-  });
-
-  document.getElementById('unpaidCount').textContent = `(${unpaidCount} طفل)`;
-  document.getElementById('paidCount').textContent   = `(${paidCount} طفل)`;
-
-  if (unpaidCount === 0) {
-    unpaidList.innerHTML = '<div class="empty-state">🎉 الكل قام بالدفع لهذا الشهر!</div>';
-  }
-  if (paidCount === 0) {
-    paidList.innerHTML = '<div class="empty-state">لا يوجد مدفوعات كاملة بعد.</div>';
-  }
-}
-
-function populatePaymentSelects() {
-  const select = document.getElementById('payChildSelect');
-  if (!select) return;
-
-  // الحفاظ على الخيار الأول الافتراضي
-  select.innerHTML = '<option value="">-- اختر الطفل --</option>';
-  
-  allPaymentStatus.forEach(c => {
-    const opt = document.createElement('option');
-    opt.value = c.id;
-    opt.textContent = c.name;
-    select.appendChild(opt);
-  });
-
-  // تحديث الحقول التلقائية عند التغيير
-  select.onchange = () => {
-    const id = select.value;
-    const amountInput = document.getElementById('payAmount');
-    const btn = document.getElementById('btnSubmitPayment');
-    
-    if(!id) {
-      if(amountInput) amountInput.value = '';
-      if(btn) btn.disabled = true;
-      return;
-    }
-
-    const found = allPaymentStatus.find(c => String(c.id) === String(id));
-    if (found && amountInput) {
-      // وضع المبلغ المتبقي تلقائياً لمنع الأخطاء البشرية وتسريع الإدخال
-      amountInput.value = found.remaining;
-      if(btn) btn.disabled = false;
-    }
-  };
-}
-
-/* ============================
-   FILTER / SEARCH
-   ============================ */
-function filterPaymentStatus() {
-  const q = document.getElementById('paySearch').value.trim().toLowerCase();
-  if(!q) {
-    buildPaymentStatusDOM();
-    return;
-  }
-
-  // فلترة لحظية سريعة جداً من الـ Memory دون الحاجة لطلب السيرفر مجدداً
-  const filtered = allPaymentStatus.filter(item => item.name.toLowerCase().includes(q));
-  
-  const unpaidList = document.getElementById('unpaidList');
-  const paidList   = document.getElementById('paidList');
-  unpaidList.innerHTML = '';
-  paidList.innerHTML   = '';
-
-  filtered.forEach(item => {
-    const card = document.createElement('div');
-    card.className = 'pay-status-card';
-    let badgeClass = 'status-unpaid';
-    if (item.status === 'دفع كامل') badgeClass = 'status-paid';
-    if (item.status === 'دفع جزئي') badgeClass = 'status-partial';
-
-    card.innerHTML = `
-      <div class="pay-card-main">
-        <span class="pay-child-name">${item.name}</span>
-        <span class="pay-status-badge ${badgeClass}">${item.status}</span>
+    <section id="paymentsTab" class="tab-content">
+      <div class="card">
+        <h3 class="card-title">💰 تسجيل عملية دفع مصاريف</h3>
+        <div class="field-group">
+          <label>اختر الطفل</label>
+          <select id="payChildSelect">
+            <option value="">-- جاري تحميل القائمة... --</option>
+          </select>
+        </div>
+        <div class="field-group">
+          <label>المبلغ المدفوع (ج.م)</label>
+          <input type="number" id="payAmount" placeholder="سيتم إدراج المتبقي تلقائياً" />
+        </div>
+        <button class="btn-submit" id="btnSubmitPayment" onclick="submitPayment()" disabled>
+          <span>💰</span> تسجيل الدفعة
+        </button>
       </div>
-      <div class="pay-card-details">
-        <span>المطلوب: <strong>${item.monthlyFee} ج.م</strong></span>
-        <span>المدفوع: <strong style="color:#22c55e">${item.paid} ج.م</strong></span>
-        <span>المتبقي: <strong style="color:#ef4444">${item.remaining} ج.م</strong></span>
+
+      <div class="section-title-row">
+        <h3 class="section-heading">حالة التحصيل — هذا الشهر</h3>
+        <button class="refresh-btn" onclick="loadPaymentsTab()">↻</button>
       </div>
-    `;
-    if (item.status === 'دفع كامل') paidList.appendChild(card);
-    else unpaidList.appendChild(card);
-  });
-}
+      <div class="field-group" style="margin-bottom:1rem">
+        <input type="text" id="paySearch" placeholder="🔍 ابحث باسم الطفل..." oninput="filterPaymentStatus()" />
+      </div>
 
-/* ============================
-   FORM SUBMISSIONS (POST)
-   ============================ */
-async function submitRegister() {
-  const nameInput = document.getElementById('regName');
-  const feeInput  = document.getElementById('regFee');
+      <div class="section-title-row">
+        <h3 class="section-heading" style="color:#ef4444">❌ لم يدفع / جزئي</h3>
+        <span id="unpaidCount" style="font-size:0.8rem;color:var(--text-muted)"></span>
+      </div>
+      <div class="pay-status-list" id="unpaidList">
+        <div class="loading-placeholder">⏳ جاري التحميل...</div>
+      </div>
 
-  const name = nameInput.value.trim();
-  const monthlyFee = feeInput.value.trim();
+      <div class="section-title-row" style="margin-top:1.5rem">
+        <h3 class="section-heading" style="color:#22c55e">✅ دفعوا كامل</h3>
+        <span id="paidCount" style="font-size:0.8rem;color:var(--text-muted)"></span>
+      </div>
+      <div class="pay-status-list" id="paidList">
+        <div class="loading-placeholder">⏳ جاري التحميل...</div>
+      </div>
+    </section>
 
-  if(!name || !monthlyFee) {
-    showToast('⚠️ من فضلك اكمل بيانات الطفل', 'error');
-    return;
-  }
+  </main>
 
-  const payload = { name, monthlyFee, className: 'الروضة' };
-  const ok = await apiPost('RegisterChild', payload);
-  if (ok) {
-    nameInput.value = '';
-    feeInput.value = '';
-    // إعادة تحميل خفيف للبيانات
-    loadDashboard();
-  }
-}
+  <div class="toast" id="toast"></div>
 
-async function submitPayment() {
-  const select = document.getElementById('payChildSelect');
-  const amountInput = document.getElementById('payAmount');
+  <div class="loading-overlay" id="loadingOverlay">
+    <div class="spinner"></div>
+    <div class="loading-text">جاري تحديث البيانات السحابية...</div>
+  </div>
 
-  const id = select.value;
-  const amount = amountInput.value.trim();
-  
-  // صيغة الشهر الحالي الافتراضية "YYYY-MM" متوافقة مع لوجيك السيرفر
-  const now = new Date();
-  const month = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
-
-  if(!id || !amount) {
-    showToast('⚠️ اختر الطفل والمبلغ', 'error');
-    return;
-  }
-
-  const found = allPaymentStatus.find(c => String(c.id) === String(id));
-  const name = found ? found.name : '';
-
-  const payload = { id, name, amount, month };
-  const ok = await apiPost('Payments', payload);
-  if (ok) {
-    amountInput.value = '';
-    select.value = '';
-    const btn = document.getElementById('btnSubmitPayment');
-    if(btn) btn.disabled = true;
-    
-    // تحديث تابة المصاريف فوراً لرؤية النتيجة
-    loadPaymentsTab();
-  }
-}
-
-/* ============================
-   API BRIDGE (POST)
-   ============================ */
-async function apiPost(action, payload) {
-  showLoading(true);
-  try {
-    const res = await fetch(APPS_SCRIPT_URL, {
-      method:  'POST',
-      mode:    'no-cors', // متوافق مع قيود الحماية لـ Apps Script Web Apps
-      redirect: 'follow',
-      headers:  { 'Content-Type': 'text/plain' },
-      body:     JSON.stringify({ action, payload }),
-    });
-
-    showLoading(false);
-    
-    // بما أن الوضع هو no-cors، السيرفر ينفذ بنجاح ولكن الاستجابة تكون opaque.
-    // نقوم بإظهار رسالة النجاح والـ Invalidation التلقائي يحدث في الـ Apps Script.
-    showToast('✅ تم الحفظ بنجاح وتحديث النظام!', 'success');
-    return true;
-
-  } catch(err) {
-    showLoading(false);
-    console.error(err);
-    showToast('❌ تعذر الاتصال بالسيرفر', 'error');
-    return false;
-  }
-}
-
-/* ============================
-   HELPERS & ANIMATIONS
-   ============================ */
-function animNum(id, target) {
-  const el = document.getElementById(id);
-  if (!el) return;
-  const start    = performance.now();
-  const duration = 1000;
-  function tick(now) {
-    const p     = Math.min((now - start) / duration, 1);
-    const eased = 1 - Math.pow(2, -10 * p);
-    el.textContent = Math.round(target * eased).toLocaleString('ar-EG');
-    if (p < 1) requestAnimationFrame(tick);
-  }
-  requestAnimationFrame(tick);
-}
-
-function showLoading(show) {
-  const el = document.getElementById('loadingOverlay');
-  if (el) el.classList.toggle('show', show);
-}
-
-let toastTimer;
-function showToast(msg, type = '') {
-  const toast = document.getElementById('toast');
-  if (!toast) return;
-  toast.textContent = msg;
-  toast.className   = 'toast show ' + type;
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => {
-    toast.className = 'toast';
-  }, 3500);
-}
+  <script src="director.js"></script>
+</body>
+</html>
