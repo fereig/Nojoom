@@ -3,8 +3,7 @@
 /* ============================
    CONFIG
    ============================ */
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx3A1Q8h8VCPd8k3CYPffM7rbVXtbe6_UpFu6z5m_AMrhb8wif0tVSSY-pofy9uahlVVQ/exec';
-
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyOAJrciJcnSXsxCUsMXQcqCablNhRx_3x75Sm_XAiqW6B_BfwL_K2hW4HY1cm6TrM2Fw/exec';
 const N8N_BASE = 'http://localhost:5678/webhook'; // غيري لـ VPS عند النشر
 const WEBHOOKS = {
   register: `${N8N_BASE}/RegisterChild`,
