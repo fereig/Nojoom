@@ -209,6 +209,7 @@
 
     <!-- ======= TAB 3: PAYMENTS ======= -->
    <!-- ======= TAB 3: PAYMENTS ======= -->
+<!-- ======= TAB 3: PAYMENTS ======= -->
 <section class="tab-content" id="tab-payments">
   <div class="section-header">
     <div>
@@ -233,17 +234,15 @@
     </button>
   </div>
 
-  <!-- SEARCH -->
   <div class="section-title-row">
     <h3 class="section-heading">حالة التحصيل — هذا الشهر</h3>
     <button class="refresh-btn" onclick="loadPaymentsTab()">↻</button>
   </div>
   <div class="field-group" style="margin-bottom:1rem">
-    <input type="text" id="paySearch" placeholder="🔍 ابحث باسم الطفل..." 
+    <input type="text" id="paySearch" placeholder="🔍 ابحث باسم الطفل..."
       oninput="filterPaymentStatus()" />
   </div>
 
-  <!-- لم يدفع / جزئي -->
   <div class="section-title-row">
     <h3 class="section-heading" style="color:#ef4444">❌ لم يدفع / جزئي</h3>
     <span id="unpaidCount" style="font-size:0.8rem;color:var(--text-muted)"></span>
@@ -252,7 +251,6 @@
     <div class="loading-placeholder">⏳ جاري التحميل...</div>
   </div>
 
-  <!-- دفع كامل -->
   <div class="section-title-row" style="margin-top:1.5rem">
     <h3 class="section-heading" style="color:#22c55e">✅ دفعوا كامل</h3>
     <span id="paidCount" style="font-size:0.8rem;color:var(--text-muted)"></span>
