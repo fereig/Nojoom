@@ -1,9 +1,15 @@
-/* director.js — لوحة المديرة */
+/* director.js — لوحة المديرة | FIXED */
 
 /* ============================
    CONFIG
    ============================ */
 const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwET2jd8CtgKvozjNdab7st4GkD8roSqKnY30KyuUzRVpiDcSXTRIBUv0TKfjwwlv_BiQ/exec';
+
+/* ============================
+   STATE
+   ============================ */
+let allPaymentStatus = [];
+
 /* ============================
    JSONP HELPER
    ============================ */
@@ -37,22 +43,6 @@ function fetchJSONP(url, callback) {
   document.body.appendChild(script);
 }
 
-
-function selectChild(id, name, cls) {
-  document.getElementById('payChildSearch').value = name;
-  document.getElementById('payChildSuggestions').style.display = 'none';
-  const btn             = document.getElementById('paySubmitBtn');
-  btn.dataset.childId   = id;
-  btn.dataset.childName = name;
-  btn.dataset.class     = cls;
-  btn.disabled          = false;
-  btn.style.opacity     = '1';
-}
-
-
-function filterPayChildren() {
-  loadPayChildren();
-}
 /* ============================
    INIT
    ============================ */
@@ -64,14 +54,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
 function setTodayDate() {
   const str = new Date().toLocaleDateString('ar-EG', {
-    weekday:'long', year:'numeric', month:'long', day:'numeric'
+    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
   });
   document.getElementById('todayDate').textContent = str;
 }
 
 function setDefaultMonth() {
   const now = new Date();
-  const m = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+  const m = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
   document.getElementById('payMonth').value = m;
 }
 
@@ -89,38 +79,6 @@ function switchTab(tabId, btn) {
   }
 }
 
-
-
-function searchPayChild() {
-  const input = document.getElementById('payChildSearch');
-  const q     = input.value.trim();
-  const box   = document.getElementById('payChildSuggestions');
-
-  if (q.length < 2) { box.style.display = 'none'; return; }
-
-  const matches = allPaymentStatus.filter(p =>
-    p.child_name.includes(q)
-  ).slice(0, 6);
-
-  if (!matches.length) { box.style.display = 'none'; return; }
-
-  // حساب موقع الـ input
-  const rect = input.getBoundingClientRect();
-  box.style.top   = (rect.bottom + 4) + 'px';
-  box.style.right = (window.innerWidth - rect.right) + 'px';
-  box.style.width = rect.width + 'px';
-
-  box.innerHTML = matches.map(p => `
-    <div onclick="selectChild('${p.child_id}','${p.child_name}','${p.class}')"
-      style="padding:12px 16px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.05);font-family:Cairo,sans-serif;font-size:0.9rem">
-      ${p.child_name}
-      <span style="color:rgba(255,255,255,0.4);font-size:0.78rem"> — ${p.class}</span>
-    </div>
-  `).join('');
-
-  box.style.display = 'block';
-}
-
 /* ============================
    LOAD DASHBOARD
    ============================ */
@@ -129,33 +87,31 @@ function loadDashboard(retryCount = 0) {
 
   fetchJSONP(APPS_SCRIPT_URL + '?action=getDashboard', function(data) {
     document.querySelector('.refresh-btn')?.classList.remove('spinning');
-    
+
     if (data && data.status === 'ok') {
       renderDashboard(data);
-    } else if (retryCount < 3) {
-      // ✅ retry تلقائي بعد ثانيتين
+    } else if (retryCount < 2) {
       setTimeout(() => loadDashboard(retryCount + 1), 3000);
       return;
     } else {
       renderDashboardEmpty();
     }
-    
+
     document.getElementById('lastUpdated').textContent =
       'آخر تحديث: ' + new Date().toLocaleTimeString('ar-EG');
   });
 }
 
 function renderDashboard(d) {
-  animNum('kpiTotal',   d.totalChildren        || 0);
-  animNum('kpiPresent', d.presentToday         || 0);
+  animNum('kpiTotal',   d.totalChildren  || 0);
+  animNum('kpiPresent', d.presentToday   || 0);
 
   document.getElementById('kpiPayments').textContent =
     (d.collectedThisMonth || 0).toLocaleString('ar-EG') + ' ج';
   document.getElementById('kpiUnpaid').textContent = d.unpaidCount || 0;
 
   const pct = d.totalChildren
-    ? Math.round((d.presentToday / d.totalChildren) * 100)
-    : 0;
+    ? Math.round((d.presentToday / d.totalChildren) * 100) : 0;
   document.getElementById('kpiPresentTrend').textContent = `${pct}% من الإجمالي`;
   document.getElementById('kpiPresentTrend').className   = 'kpi-trend ' + (pct >= 90 ? 'up' : 'down');
 
@@ -166,14 +122,14 @@ function renderDashboard(d) {
 
   document.querySelectorAll('.kpi-card').forEach(c => c.classList.remove('skeleton'));
 
-  renderClasses(d.classes              || []);
-  renderChart(d.weeklyAttendance       || [], d.weekDays || []);
+  renderClasses(d.classes            || []);
+  renderChart(d.weeklyAttendance     || [], d.weekDays || []);
   renderRecentPayments(d.recentPayments || []);
-  renderIncidents(d.recentIncidents    || []);
+  renderIncidents(d.recentIncidents  || []);
 }
 
 function renderDashboardEmpty() {
-  ['kpiTotal','kpiPresent'].forEach(id => {
+  ['kpiTotal', 'kpiPresent'].forEach(id => {
     document.getElementById(id).textContent = '—';
   });
   document.getElementById('kpiPayments').textContent = '—';
@@ -231,9 +187,9 @@ function renderChart(values, labels) {
 
   const W = canvas.width / dpr;
   const H = 160;
-  const pad = { top:20, bottom:30, left:10, right:10 };
+  const pad = { top: 20, bottom: 30, left: 10, right: 10 };
   const chartW = W - pad.left - pad.right;
-  const chartH = H - pad.top  - pad.bottom;
+  const chartH = H - pad.top - pad.bottom;
 
   ctx.clearRect(0, 0, W, H);
 
@@ -257,78 +213,20 @@ function renderChart(values, labels) {
 
     ctx.fillStyle = grad;
     ctx.beginPath();
-    ctx.roundRect(x, y, barW, barH, [4,4,0,0]);
+    ctx.roundRect(x, y, barW, barH, [4, 4, 0, 0]);
     ctx.fill();
 
-    ctx.fillStyle  = isToday ? '#93c5fd' : 'rgba(155,163,192,0.7)';
-    ctx.font       = `${isToday ? 700 : 500} 10px Cairo, sans-serif`;
-    ctx.textAlign  = 'center';
+    ctx.fillStyle = isToday ? '#93c5fd' : 'rgba(155,163,192,0.7)';
+    ctx.font      = `${isToday ? 700 : 500} 10px Cairo, sans-serif`;
+    ctx.textAlign = 'center';
     ctx.fillText(`${val}%`, x + barW / 2, y - 5);
 
-    ctx.fillStyle  = isToday ? '#e8eaf0' : 'rgba(107,116,148,0.9)';
-    ctx.font       = `${isToday ? 600 : 400} 9px Cairo, sans-serif`;
+    ctx.fillStyle = isToday ? '#e8eaf0' : 'rgba(107,116,148,0.9)';
+    ctx.font      = `${isToday ? 600 : 400} 9px Cairo, sans-serif`;
     ctx.fillText(labels[i] || '', x + barW / 2, H - 8);
   });
 }
 
-
-
-
-function filterPaymentStatus() {
-  const search = (document.getElementById('paySearch')?.value || '').trim();
-if (!search) {
-  document.getElementById('unpaidList').innerHTML = 
-    '<div class="loading-placeholder">🔍 ابحث عن طفل لعرض حالته</div>';
-  document.getElementById('paidList').innerHTML = '';
-  document.getElementById('unpaidCount').textContent = '';
-  document.getElementById('paidCount').textContent = '';
-  return;
-}
-const filtered = allPaymentStatus.filter(p => p.child_name.includes(search));
-
-  const unpaid = filtered.filter(p => p.status !== 'مدفوع');
-  const paid   = filtered.filter(p => p.status === 'مدفوع');
-
-  document.getElementById('unpaidCount').textContent = `(${unpaid.length})`;
-  document.getElementById('paidCount').textContent   = `(${paid.length})`;
-
-  if (unpaid.length) {
-    document.getElementById('unpaidList').innerHTML = unpaid.map(p => `
-      <div class="pay-status-row" onclick="selectChild('${p.child_id}','${p.child_name}','${p.class}')"
-        style="cursor:pointer" id="psr-${p.child_id}">
-        <div class="pay-status-info">
-          <div class="psi-name">${p.child_name}</div>
-          <div class="psi-meta">
-            🏫 ${p.class} · 
-            دفع ${(p.paid||0).toLocaleString('ar-EG')} ج · 
-            متبقي ${(p.remaining||0).toLocaleString('ar-EG')} ج
-          </div>
-        </div>
-        <span class="pay-status-badge ${p.status === 'جزئي' ? 'ps-partial' : 'ps-unpaid'}">
-          ${p.status === 'جزئي' ? '🟡 جزئي' : '❌ لم يدفع'}
-        </span>
-      </div>
-    `).join('');
-  } else {
-    document.getElementById('unpaidList').innerHTML =
-      '<div class="loading-placeholder">✅ لا يوجد متأخرين</div>';
-  }
-
-  if (paid.length) {
-    document.getElementById('paidList').innerHTML = paid.map(p => `
-      <div class="pay-status-row">
-        <div class="pay-status-info">
-          <div class="psi-name">${p.child_name}</div>
-          <div class="psi-meta">🏫 ${p.class}</div>
-        </div>
-        <span class="pay-status-badge ps-paid">✅ مدفوع</span>
-      </div>
-    `).join('');
-  } else {
-    document.getElementById('paidList').innerHTML =
-      '<div class="loading-placeholder">لا يوجد</div>';
-  }
-}
 /* ============================
    RECENT PAYMENTS
    ============================ */
@@ -347,7 +245,7 @@ function renderRecentPayments(payments) {
           <div class="pay-name">${p.child_name}</div>
           <div class="pay-meta">🏫 ${p.class} · 📅 ${p.month}</div>
         </div>
-        <span class="pay-amount">${(p.amount||0).toLocaleString('ar-EG')} ج</span>
+        <span class="pay-amount">${(p.amount || 0).toLocaleString('ar-EG')} ج</span>
       </div>
     `;
   }).join('');
@@ -377,41 +275,141 @@ function renderIncidents(items) {
 }
 
 /* ============================
-   PAYMENTS TAB — تحميل الأطفال
+   PAYMENTS TAB
    ============================ */
-let allPaymentStatus = [];
-
 function loadPaymentsTab() {
-  dfunction loadPaymentsTab() {
+  // ✅ FIX: كانت متعرفة مرتين وفيها syntax error (dfunction)
+  allPaymentStatus = [];
+
   document.getElementById('unpaidList').innerHTML =
     '<div class="loading-placeholder">⏳ جاري التحميل...</div>';
-  document.getElementById('paidList').innerHTML =
-    '<div class="loading-placeholder">⏳ جاري التحميل...</div>';
+  document.getElementById('paidList').innerHTML   = '';
+  document.getElementById('unpaidCount').textContent = '';
+  document.getElementById('paidCount').textContent   = '';
 
-  const url = `${APPS_SCRIPT_URL}?action=getPaymentsTab`;
-  console.log('Loading URL:', url); // ← ضيف ده
-  fetchJSONP(url, function(data) {
-    console.log('Response:', data); // ← وده
+  fetchJSONP(APPS_SCRIPT_URL + '?action=getPaymentsTab', function(data) {
     if (data && data.paymentStatus) {
       allPaymentStatus = data.paymentStatus;
-      filterPaymentStatus();
+      // إعادة تطبيق البحث لو فيه نص موجود
+      const search = (document.getElementById('paySearch')?.value || '').trim();
+      if (search) {
+        filterPaymentStatus();
+      } else {
+        document.getElementById('unpaidList').innerHTML =
+          '<div class="loading-placeholder">🔍 ابحث عن طفل لعرض حالته</div>';
+      }
     } else {
       document.getElementById('unpaidList').innerHTML =
         '<div class="loading-placeholder">⚠️ تعذر تحميل البيانات</div>';
-      document.getElementById('paidList').innerHTML = '';
     }
   });
 }
 
-function filterPayChildren() {
-  loadPaymentsTab();
+/* ============================
+   SEARCH — اختيار طفل للدفع
+   ============================ */
+function searchPayChild() {
+  const input = document.getElementById('payChildSearch');
+  const q     = input.value.trim();
+  const box   = document.getElementById('payChildSuggestions');
+
+  if (q.length < 2) { box.style.display = 'none'; return; }
+
+  if (!allPaymentStatus.length) {
+    // تحميل لو لسه فارغ
+    loadPaymentsTab();
+    return;
+  }
+
+  const matches = allPaymentStatus.filter(p => p.child_name.includes(q)).slice(0, 6);
+  if (!matches.length) { box.style.display = 'none'; return; }
+
+  const rect = input.getBoundingClientRect();
+  box.style.top   = (rect.bottom + 4) + 'px';
+  box.style.right = (window.innerWidth - rect.right) + 'px';
+  box.style.width = rect.width + 'px';
+
+  box.innerHTML = matches.map(p => `
+    <div onclick="selectChild('${p.child_id}','${p.child_name}','${p.class}')"
+      style="padding:12px 16px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.05);font-family:Cairo,sans-serif;font-size:0.9rem">
+      ${p.child_name}
+      <span style="color:rgba(255,255,255,0.4);font-size:0.78rem"> — ${p.class}</span>
+    </div>
+  `).join('');
+
+  box.style.display = 'block';
 }
 
-function loadPaymentStatus() {
-  loadPaymentsTab();
+function selectChild(id, name, cls) {
+  document.getElementById('payChildSearch').value     = name;
+  document.getElementById('payChildSuggestions').style.display = 'none';
+  const btn             = document.getElementById('paySubmitBtn');
+  btn.dataset.childId   = id;
+  btn.dataset.childName = name;
+  btn.dataset.class     = cls;
+  btn.disabled          = false;
+  btn.style.opacity     = '1';
 }
 
+/* ============================
+   FILTER — حالة تحصيل الشهر
+   ============================ */
+function filterPaymentStatus() {
+  const search = (document.getElementById('paySearch')?.value || '').trim();
 
+  if (!search) {
+    document.getElementById('unpaidList').innerHTML =
+      '<div class="loading-placeholder">🔍 ابحث عن طفل لعرض حالته</div>';
+    document.getElementById('paidList').innerHTML   = '';
+    document.getElementById('unpaidCount').textContent = '';
+    document.getElementById('paidCount').textContent   = '';
+    return;
+  }
+
+  const filtered = allPaymentStatus.filter(p => p.child_name.includes(search));
+  const unpaid   = filtered.filter(p => p.status !== 'مدفوع');
+  const paid     = filtered.filter(p => p.status === 'مدفوع');
+
+  document.getElementById('unpaidCount').textContent = `(${unpaid.length})`;
+  document.getElementById('paidCount').textContent   = `(${paid.length})`;
+
+  if (unpaid.length) {
+    document.getElementById('unpaidList').innerHTML = unpaid.map(p => `
+      <div class="pay-status-row" onclick="selectChild('${p.child_id}','${p.child_name}','${p.class}')"
+        style="cursor:pointer" id="psr-${p.child_id}">
+        <div class="pay-status-info">
+          <div class="psi-name">${p.child_name}</div>
+          <div class="psi-meta">
+            🏫 ${p.class} ·
+            دفع ${(p.paid || 0).toLocaleString('ar-EG')} ج ·
+            متبقي ${(p.remaining || 0).toLocaleString('ar-EG')} ج
+          </div>
+        </div>
+        <span class="pay-status-badge ${p.status === 'جزئي' ? 'ps-partial' : 'ps-unpaid'}">
+          ${p.status === 'جزئي' ? '🟡 جزئي' : '❌ لم يدفع'}
+        </span>
+      </div>
+    `).join('');
+  } else {
+    document.getElementById('unpaidList').innerHTML =
+      '<div class="loading-placeholder">✅ لا يوجد متأخرين</div>';
+  }
+
+  if (paid.length) {
+    document.getElementById('paidList').innerHTML = paid.map(p => `
+      <div class="pay-status-row">
+        <div class="pay-status-info">
+          <div class="psi-name">${p.child_name}</div>
+          <div class="psi-meta">🏫 ${p.class} · ✅ ${(p.paid || 0).toLocaleString('ar-EG')} ج</div>
+        </div>
+        <span class="pay-status-badge ps-paid">✅ مدفوع</span>
+      </div>
+    `).join('');
+  } else {
+    document.getElementById('paidList').innerHTML =
+      '<div class="loading-placeholder">لا يوجد</div>';
+  }
+}
 
 /* ============================
    REGISTER CHILD
@@ -448,7 +446,7 @@ async function submitRegister() {
 
   const ok = await sendToAppsScript(payload);
   if (ok) {
-    ['regChildName','regParentName','regPhone','regFee','regBirthDate']
+    ['regChildName', 'regParentName', 'regPhone', 'regFee', 'regBirthDate']
       .forEach(id => { document.getElementById(id).value = ''; });
     document.getElementById('regClass').value = '';
   }
@@ -465,14 +463,14 @@ async function submitPayment() {
   const amount    = parseFloat(document.getElementById('payAmount').value);
   const month     = document.getElementById('payMonth').value;
 
-  if (!childId)             return showToast('⚠️ اختاري الطفل من القائمة أولاً', 'error');
-  if (!amount || amount<=0) return showToast('⚠️ أدخلي المبلغ', 'error');
-  if (!month)               return showToast('⚠️ اختاري الشهر', 'error');
+  if (!childId)              return showToast('⚠️ اختاري الطفل من القائمة أولاً', 'error');
+  if (!amount || amount <= 0) return showToast('⚠️ أدخلي المبلغ', 'error');
+  if (!month)                return showToast('⚠️ اختاري الشهر', 'error');
 
   const payload = {
     action: 'Payments',
     payload: {
-      submission_id: `${cls.replace(/\s/g,'')}-${month}-pay-${childId}-${uid()}`,
+      submission_id: `${cls.replace(/\s/g, '')}-${month}-pay-${childId}-${uid()}`,
       timestamp:     new Date().toISOString(),
       child_id:      childId,
       child_name:    childName,
@@ -485,18 +483,20 @@ async function submitPayment() {
   const ok = await sendToAppsScript(payload);
   if (ok) {
     document.getElementById('payAmount').value = '';
-    selectedChildId = '';
-    btn.disabled    = true;
-    btn.textContent = '💰 تسجيل الدفعة';
+    document.getElementById('payChildSearch').value = '';
+    btn.disabled      = true;
+    btn.style.opacity = '0.5';
+    btn.textContent   = '💰 تسجيل الدفعة';
     delete btn.dataset.childId;
     delete btn.dataset.childName;
     delete btn.dataset.class;
+    // إعادة تحميل حالة المدفوعات
     loadPaymentsTab();
   }
 }
 
 /* ============================
-   HTTP HELPER — Apps Script
+   HTTP HELPER
    ============================ */
 async function sendToAppsScript(payload) {
   showLoading(true);
@@ -504,14 +504,14 @@ async function sendToAppsScript(payload) {
     const res = await fetch(APPS_SCRIPT_URL, {
       method:   'POST',
       redirect: 'follow',
-      headers:  { 'Content-Type': 'text/plain' },  // ← غيري من application/json
+      headers:  { 'Content-Type': 'text/plain' },
       body:     JSON.stringify(payload),
     });
 
     showLoading(false);
     let data = null;
     try { data = await res.json(); } catch(_) {}
-console.log('Apps Script response:', data); // ← أضف السطر ده
+
     if (data && data.status === 'duplicate') {
       showToast('⚠️ ' + data.message, 'error');
       return false;
@@ -520,6 +520,7 @@ console.log('Apps Script response:', data); // ← أضف السطر ده
       showToast('✅ تم بنجاح!', 'success');
       return true;
     }
+    // Apps Script أحياناً بيرد بـ opaque redirect
     showToast('✅ تم بنجاح!', 'success');
     return true;
 
@@ -551,9 +552,10 @@ function showLoading(show) {
   const el = document.getElementById('loadingOverlay');
   if (el) el.classList.toggle('show', show);
 }
+
 let toastTimer;
 function showToast(msg, type = '') {
-  const t    = document.getElementById('toast');
+  const t       = document.getElementById('toast');
   t.textContent = msg;
   t.className   = 'toast show ' + type;
   clearTimeout(toastTimer);
