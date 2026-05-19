@@ -278,38 +278,23 @@ function renderIncidents(items) {
 /* ============================
    PAYMENTS TAB — تحميل الأطفال
    ============================ */
+let allPaymentStatus = [];
+
 function loadPaymentsTab() {
-  const cls = document.getElementById('payClass').value;
-  const sel = document.getElementById('payChild');
-  sel.innerHTML = '<option value="">⏳ جاري التحميل...</option>';
-  document.getElementById('payStatusList').innerHTML =
+  document.getElementById('unpaidList').innerHTML =
+    '<div class="loading-placeholder">⏳ جاري التحميل...</div>';
+  document.getElementById('paidList').innerHTML =
     '<div class="loading-placeholder">⏳ جاري التحميل...</div>';
 
-  const url = `${APPS_SCRIPT_URL}?action=getPaymentsTab` +
-    (cls ? `&class=${encodeURIComponent(cls)}` : '');
-
+  const url = `${APPS_SCRIPT_URL}?action=getPaymentsTab`;
   fetchJSONP(url, function(data) {
-    // أطفال
-    sel.innerHTML = '<option value="">— اختاري —</option>';
-    if (data && data.children && data.children.length) {
-      data.children.forEach(c => {
-        const opt = document.createElement('option');
-        opt.value         = c.child_id;
-        opt.dataset.name  = c.child_name;
-        opt.dataset.class = c.class;
-        opt.textContent   = c.child_name + (cls ? '' : ` — ${c.class}`);
-        sel.appendChild(opt);
-      });
-    } else {
-      sel.innerHTML = '<option value="">⚠️ تعذر تحميل الأطفال</option>';
-    }
-
-    // حالة الدفع
     if (data && data.paymentStatus) {
-      renderPaymentStatus(data.paymentStatus);
+      allPaymentStatus = data.paymentStatus;
+      filterPaymentStatus();
     } else {
-      document.getElementById('payStatusList').innerHTML =
+      document.getElementById('unpaidList').innerHTML =
         '<div class="loading-placeholder">⚠️ تعذر تحميل البيانات</div>';
+      document.getElementById('paidList').innerHTML = '';
     }
   });
 }
@@ -322,26 +307,7 @@ function loadPaymentStatus() {
   loadPaymentsTab();
 }
 
-function renderPaymentStatus(items) {
-  const list = document.getElementById('payStatusList');
-  if (!items.length) {
-    list.innerHTML = '<div class="loading-placeholder">لا توجد بيانات</div>';
-    return;
-  }
-  list.innerHTML = items.map(p => {
-    const cls  = p.status === 'مدفوع' ? 'ps-paid' : p.status === 'جزئي' ? 'ps-partial' : 'ps-unpaid';
-    const icon = p.status === 'مدفوع' ? '✅' : p.status === 'جزئي' ? '🟡' : '❌';
-    return `
-      <div class="pay-status-row">
-        <div class="pay-status-info">
-          <div class="psi-name">${p.child_name}</div>
-          <div class="psi-meta">🏫 ${p.class} · دفع ${(p.paid||0).toLocaleString('ar-EG')} من ${(p.total||0).toLocaleString('ar-EG')} ج</div>
-        </div>
-        <span class="pay-status-badge ${cls}">${icon} ${p.status}</span>
-      </div>
-    `;
-  }).join('');
-}
+
 
 /* ============================
    REGISTER CHILD
@@ -388,18 +354,16 @@ async function submitRegister() {
    SUBMIT PAYMENT
    ============================ */
 async function submitPayment() {
-  const childSel = document.getElementById('payChild');
-  const childId  = childSel.value;
-  const amount   = parseFloat(document.getElementById('payAmount').value);
-  const month    = document.getElementById('payMonth').value;
+  const btn       = document.getElementById('paySubmitBtn');
+  const childId   = btn.dataset.childId;
+  const childName = btn.dataset.childName;
+  const cls       = btn.dataset.class;
+  const amount    = parseFloat(document.getElementById('payAmount').value);
+  const month     = document.getElementById('payMonth').value;
 
-  if (!childId)             return showToast('⚠️ اختاري الطفل أولاً', 'error');
+  if (!childId)             return showToast('⚠️ اختاري الطفل من القائمة أولاً', 'error');
   if (!amount || amount<=0) return showToast('⚠️ أدخلي المبلغ', 'error');
   if (!month)               return showToast('⚠️ اختاري الشهر', 'error');
-
-  const opt       = childSel.querySelector(`option[value="${childId}"]`);
-  const childName = opt?.dataset.name  || '';
-  const cls       = opt?.dataset.class || document.getElementById('payClass').value;
 
   const payload = {
     action: 'Payments',
@@ -417,8 +381,13 @@ async function submitPayment() {
   const ok = await sendToAppsScript(payload);
   if (ok) {
     document.getElementById('payAmount').value = '';
-    document.getElementById('payChild').value  = '';
-    loadPaymentStatus();
+    selectedChildId = '';
+    btn.disabled    = true;
+    btn.textContent = '💰 تسجيل الدفعة';
+    delete btn.dataset.childId;
+    delete btn.dataset.childName;
+    delete btn.dataset.class;
+    loadPaymentsTab();
   }
 }
 
