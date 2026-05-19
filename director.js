@@ -228,6 +228,58 @@ function renderChart(values, labels) {
   });
 }
 
+
+
+
+function filterPaymentStatus() {
+  const search = (document.getElementById('paySearch')?.value || '').trim();
+  const filtered = search
+    ? allPaymentStatus.filter(p => p.child_name.includes(search))
+    : allPaymentStatus;
+
+  const unpaid = filtered.filter(p => p.status !== 'مدفوع');
+  const paid   = filtered.filter(p => p.status === 'مدفوع');
+
+  document.getElementById('unpaidCount').textContent = `(${unpaid.length})`;
+  document.getElementById('paidCount').textContent   = `(${paid.length})`;
+
+  if (unpaid.length) {
+    document.getElementById('unpaidList').innerHTML = unpaid.map(p => `
+      <div class="pay-status-row" onclick="selectChild('${p.child_id}','${p.child_name}','${p.class}')"
+        style="cursor:pointer" id="psr-${p.child_id}">
+        <div class="pay-status-info">
+          <div class="psi-name">${p.child_name}</div>
+          <div class="psi-meta">
+            🏫 ${p.class} · 
+            دفع ${(p.paid||0).toLocaleString('ar-EG')} ج · 
+            متبقي ${(p.remaining||0).toLocaleString('ar-EG')} ج
+          </div>
+        </div>
+        <span class="pay-status-badge ${p.status === 'جزئي' ? 'ps-partial' : 'ps-unpaid'}">
+          ${p.status === 'جزئي' ? '🟡 جزئي' : '❌ لم يدفع'}
+        </span>
+      </div>
+    `).join('');
+  } else {
+    document.getElementById('unpaidList').innerHTML =
+      '<div class="loading-placeholder">✅ لا يوجد متأخرين</div>';
+  }
+
+  if (paid.length) {
+    document.getElementById('paidList').innerHTML = paid.map(p => `
+      <div class="pay-status-row">
+        <div class="pay-status-info">
+          <div class="psi-name">${p.child_name}</div>
+          <div class="psi-meta">🏫 ${p.class}</div>
+        </div>
+        <span class="pay-status-badge ps-paid">✅ مدفوع</span>
+      </div>
+    `).join('');
+  } else {
+    document.getElementById('paidList').innerHTML =
+      '<div class="loading-placeholder">لا يوجد</div>';
+  }
+}
 /* ============================
    RECENT PAYMENTS
    ============================ */
