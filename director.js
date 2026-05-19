@@ -82,18 +82,22 @@ function switchTab(tabId, btn) {
 /* ============================
    LOAD DASHBOARD
    ============================ */
-function loadDashboard() {
+function loadDashboard(retryCount = 0) {
   document.querySelector('.refresh-btn')?.classList.add('spinning');
-  setTimeout(() => document.querySelector('.refresh-btn')?.classList.remove('spinning'), 800);
 
   fetchJSONP(APPS_SCRIPT_URL + '?action=getDashboard', function(data) {
+    document.querySelector('.refresh-btn')?.classList.remove('spinning');
+    
     if (data && data.status === 'ok') {
-      console.log('✅ Dashboard data:', data);
       renderDashboard(data);
+    } else if (retryCount < 3) {
+      // ✅ retry تلقائي بعد ثانيتين
+      setTimeout(() => loadDashboard(retryCount + 1), 2000);
+      return;
     } else {
-      console.warn('⚠️ فشل تحميل الداشبورد');
       renderDashboardEmpty();
     }
+    
     document.getElementById('lastUpdated').textContent =
       'آخر تحديث: ' + new Date().toLocaleTimeString('ar-EG');
   });
@@ -302,6 +306,7 @@ function loadPayChildren() {
 }
 
 function loadPaymentStatus() {
+   
   fetchJSONP(APPS_SCRIPT_URL + '?action=getPaymentStatus', function(data) {
     if (data && data.paymentStatus) {
       renderPaymentStatus(data.paymentStatus);
