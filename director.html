@@ -218,23 +218,19 @@
     </div>
   </div>
 
-
-<div class="field-group" style="position:relative;margin-bottom:1rem">
-  <label>اسم الطفل <span class="req">*</span></label>
-  <input type="text" id="payChildSearch" placeholder="ابحث باسم الطفل..."
-    oninput="searchPayChild()" autocomplete="off" />
-  <div id="payChildSuggestions" style="
-    background:var(--card-bg);
-    border:1px solid var(--border);
-    border-radius:8px;
-    max-height:200px;
-    overflow-y:auto;
-    display:none;
-    position:absolute;
-    z-index:100;
-    width:100%;
-  "></div>
-</div>
+<div id="payChildSuggestions" style="
+  background:var(--card-bg);
+  border:1px solid var(--border);
+  border-radius:8px;
+  max-height:200px;
+  overflow-y:auto;
+  display:none;
+  position:absolute;
+  top:100%;
+  right:0;
+  left:0;
+  z-index:999;
+"></div>
   
   <div class="form-card" style="margin-bottom:1.5rem">
     <div class="form-row">
