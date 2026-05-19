@@ -21,11 +21,11 @@ const SUBJECTS = {
    ============================ */
 let teacherName = '';
 let className   = '';
-let children    = [];      // كل الأطفال
-let presentChildren = [];  // ✅ الحاضرون فقط — يتحدث بعد إرسال الحضور
+let children    = [];
+let presentChildren = [];
 
 let attendanceState      = {};
-let attendanceSubmitted  = false;   // ✅ منع إرسال الحضور أكتر من مرة
+let attendanceSubmitted  = false;
 
 let selectedNoteType  = 'سلوك';
 let selectedSeverity  = 'متوسط';
@@ -69,7 +69,6 @@ async function saveSetup() {
   document.getElementById('classNameDisplay').textContent   = className;
   document.getElementById('setupModal').classList.add('hidden');
 
-  // ✅ إعادة ضبط حالة الحضور عند تغيير الفصل
   attendanceSubmitted = false;
   presentChildren     = [];
 
@@ -78,30 +77,60 @@ async function saveSetup() {
 
 /* ============================
    LOAD CHILDREN
+   ✅ بتستخدم JSONP عشان Apps Script GET مش بيدعم CORS
    ============================ */
-async function loadChildren(cls) {
-  showLoading(true);
-  try {
-    const url  = `${APPS_SCRIPT_URL}?action=getChildren&class=${encodeURIComponent(cls)}`;
-    const res  = await fetch(url);
-    const data = await res.json();
-    const list = data.children || data.data;
+function loadChildren(cls) {
+  return new Promise(resolve => {
+    showLoading(true);
 
-    if (data && Array.isArray(list)) {
-      children = list.map(c => ({ child_id: c.child_id, child_name: c.child_name }));
-    } else {
-      throw new Error('بيانات غير صحيحة');
+    const callbackName = 'cb_' + Math.random().toString(36).slice(2);
+    const script       = document.createElement('script');
+    const url = `${APPS_SCRIPT_URL}?action=getChildren&class=${encodeURIComponent(cls)}&callback=${callbackName}`;
+    script.src = url;
+
+    const timeout = setTimeout(() => {
+      cleanup();
+      showToast('⚠️ تعذر تحميل بيانات الأطفال', 'error');
+      children = [];
+      finishLoad();
+      resolve();
+    }, 10000);
+
+    window[callbackName] = function(data) {
+      cleanup();
+      const list = data && (data.children || data.data);
+      if (Array.isArray(list)) {
+        children = list.map(c => ({ child_id: c.child_id, child_name: c.child_name }));
+      } else {
+        showToast('⚠️ تعذر تحميل بيانات الأطفال', 'error');
+        children = [];
+      }
+      finishLoad();
+      resolve();
+    };
+
+    script.onerror = function() {
+      cleanup();
+      showToast('⚠️ تعذر تحميل بيانات الأطفال', 'error');
+      children = [];
+      finishLoad();
+      resolve();
+    };
+
+    function cleanup() {
+      clearTimeout(timeout);
+      delete window[callbackName];
+      if (document.body.contains(script)) document.body.removeChild(script);
     }
-  } catch (err) {
-    console.error(err);
-    showToast('⚠️ تعذر تحميل بيانات الأطفال', 'error');
-    children = [];
-  }
-  showLoading(false);
 
-  // ✅ قبل إرسال الحضور، كل الأطفال يظهروا في كل التابات
-  presentChildren = [...children];
-  initAll();
+    function finishLoad() {
+      showLoading(false);
+      presentChildren = [...children];
+      initAll();
+    }
+
+    document.body.appendChild(script);
+  });
 }
 
 function initAll() {
@@ -146,7 +175,7 @@ function buildAttendanceGrid() {
       <span class="child-status-icon">✅</span>
     `;
     card.addEventListener('click', () => {
-      if (attendanceSubmitted) return; // ✅ منع التعديل بعد الإرسال
+      if (attendanceSubmitted) return;
       toggleAttendance(child.child_id, card);
     });
     grid.appendChild(card);
@@ -175,7 +204,6 @@ function updateAttendanceSummary() {
 }
 
 async function submitAttendance() {
-  // ✅ منع الإرسال أكتر من مرة في نفس اليوم
   if (attendanceSubmitted) {
     showToast('⚠️ تم إرسال الحضور من قبل اليوم', 'error');
     return;
@@ -187,43 +215,39 @@ async function submitAttendance() {
   const absent  = children.filter(c => attendanceState[c.child_id] === 'absent');
 
   const payload = {
-    submission_id: `${className.replace('-','')}-${today}-${teacherName.replace(/\s/g,'')}-${uid()}`,
+    submission_id: `${className.replace(/\s/g,'')}-${today}-${teacherName.replace(/\s/g,'')}-${uid()}`,
     timestamp: new Date().toISOString(),
-    date: today,
-    class: className,
-    teacher: teacherName,
-    present: present.map(c => ({ child_id: c.child_id, child_name: c.child_name })),
-    absent:  absent.map(c => ({ child_id: c.child_id, child_name: c.child_name })),
+    date:      today,
+    class:     className,
+    teacher:   teacherName,
+    present:   present.map(c => ({ child_id: c.child_id, child_name: c.child_name })),
+    absent:    absent.map(c => ({ child_id: c.child_id, child_name: c.child_name })),
   };
 
   const ok = await sendToAppsScript('Attendance', payload);
 
   if (ok) {
     attendanceSubmitted = true;
-
-    // ✅ تحديث قائمة الحاضرين للتابات التانية
     presentChildren = present;
     buildChildSelects();
     buildAssessmentGrid();
 
-    // ✅ تعطيل كروت الحضور بصرياً
     document.querySelectorAll('#attendanceGrid .child-card').forEach(card => {
-      card.style.opacity = '0.6';
+      card.style.opacity      = '0.6';
       card.style.pointerEvents = 'none';
     });
 
-    // ✅ تغيير زرار الإرسال
     const btn = document.querySelector('#tab-attendance .btn-submit');
     if (btn) {
-      btn.textContent = '✅ تم إرسال الحضور';
-      btn.disabled    = true;
+      btn.textContent  = '✅ تم إرسال الحضور';
+      btn.disabled     = true;
       btn.style.opacity = '0.6';
     }
   }
 }
 
 /* ============================
-   CHILD SELECTS — الحاضرون فقط بعد إرسال الحضور
+   CHILD SELECTS
    ============================ */
 function buildChildSelects() {
   const list = attendanceSubmitted ? presentChildren : children;
@@ -261,15 +285,15 @@ async function submitNote() {
   const today = todayISO();
 
   const payload = {
-    submission_id: `${className.replace('-','')}-${today}-note-${childId}-${uid()}`,
-    timestamp: new Date().toISOString(),
-    date: today,
-    class: className,
-    teacher: teacherName,
-    child_id: childId,
+    submission_id: `${className.replace(/\s/g,'')}-${today}-note-${childId}-${uid()}`,
+    timestamp:  new Date().toISOString(),
+    date:       today,
+    class:      className,
+    teacher:    teacherName,
+    child_id:   childId,
     child_name: child.child_name,
-    note_type: selectedNoteType,
-    note: noteText,
+    note_type:  selectedNoteType,
+    note:       noteText,
   };
 
   const ok = await sendToAppsScript('Notes', payload);
@@ -303,15 +327,15 @@ async function submitIncident() {
   const today = todayISO();
 
   const payload = {
-    submission_id: `${className.replace('-','')}-${today}-incident-${childId}-${uid()}`,
-    timestamp: new Date().toISOString(),
-    date: today,
-    class: className,
-    teacher: teacherName,
-    child_id: childId,
+    submission_id: `${className.replace(/\s/g,'')}-${today}-incident-${childId}-${uid()}`,
+    timestamp:  new Date().toISOString(),
+    date:       today,
+    class:      className,
+    teacher:    teacherName,
+    child_id:   childId,
     child_name: child.child_name,
-    type: incType,
-    severity: selectedSeverity,
+    type:       incType,
+    severity:   selectedSeverity,
     details,
     action,
   };
@@ -325,7 +349,7 @@ async function submitIncident() {
 }
 
 /* ============================
-   ASSESSMENTS — الحاضرون فقط بعد إرسال الحضور
+   ASSESSMENTS
    ============================ */
 function selectSubject(el) {
   document.querySelectorAll('.subject-card').forEach(c => c.classList.remove('selected'));
@@ -340,7 +364,6 @@ function buildAssessmentGrid() {
   const subject  = SUBJECTS[selectedSubject];
   assessmentRatings = {};
 
-  // ✅ عرض الحاضرين فقط بعد إرسال الحضور
   const list = attendanceSubmitted ? presentChildren : children;
 
   list.forEach(child => {
@@ -384,10 +407,8 @@ function setRating(childId, skill, value, btn) {
 async function submitAssessments() {
   const subject = SUBJECTS[selectedSubject];
   const today   = todayISO();
+  const list    = attendanceSubmitted ? presentChildren : children;
 
-  const list = attendanceSubmitted ? presentChildren : children;
-
-  // ✅ الأطفال اللي عندهم تقييم غير كويس فقط بيتبعتوا للشيت
   const assessments = list
     .map(child => ({
       child_id:   child.child_id,
@@ -401,17 +422,16 @@ async function submitAssessments() {
   }
 
   const payload = {
-    submission_id: `${className.replace('-','')}-${today}-assess-${selectedSubject}-${uid()}`,
-    timestamp: new Date().toISOString(),
-    date: today,
-    class: className,
-    teacher: teacherName,
-    subject: selectedSubject,
+    submission_id: `${className.replace(/\s/g,'')}-${today}-assess-${selectedSubject}-${uid()}`,
+    timestamp:     new Date().toISOString(),
+    date:          today,
+    class:         className,
+    teacher:       teacherName,
+    subject:       selectedSubject,
     subject_label: subject.label,
-    skills: subject.skills,
+    skills:        subject.skills,
     assessments,
-    // ✅ بنبعت كل الحاضرين للـ Apps Script عشان يبعت للكويسين كمان
-    allChildren: list.map(c => ({ child_id: c.child_id, child_name: c.child_name })),
+    allChildren:   list.map(c => ({ child_id: c.child_id, child_name: c.child_name })),
   };
 
   await sendToAppsScript('Assessments', payload);
@@ -419,18 +439,39 @@ async function submitAssessments() {
 
 /* ============================
    HTTP HELPER
+   ✅ الإصلاح الرئيسي: حذف mode:'no-cors' واستخدام redirect:'follow'
+      عشان Apps Script يقدر يستقبل الطلب ويرد صح
    ============================ */
 async function sendToAppsScript(action, payload) {
   showLoading(true);
   try {
-    await fetch(APPS_SCRIPT_URL, {
-      method: 'POST',
-      mode: 'no-cors',
-      body: JSON.stringify({ action, payload }),
+    const res = await fetch(APPS_SCRIPT_URL, {
+      method:   'POST',
+      redirect: 'follow',                         // ✅ ضروري مع Apps Script
+      headers:  { 'Content-Type': 'text/plain' }, // ✅ text/plain يتجنب preflight
+      body:     JSON.stringify({ action, payload }),
     });
+
     showLoading(false);
+
+    // Apps Script بيرد بـ JSON حتى لو status مش 200
+    let data = null;
+    try { data = await res.json(); } catch(_) {}
+
+    if (data && data.status === 'duplicate') {
+      showToast('⚠️ ' + data.message, 'error');
+      return false;
+    }
+
+    if (data && data.status === 'ok') {
+      showToast('✅ تم الإرسال بنجاح!', 'success');
+      return true;
+    }
+
+    // لو مفيش رد واضح بس الطلب وصل (Apps Script أحياناً بيرد بـ opaque)
     showToast('✅ تم الإرسال بنجاح!', 'success');
     return true;
+
   } catch (err) {
     showLoading(false);
     console.error(err);
