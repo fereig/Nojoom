@@ -81,28 +81,34 @@ function switchTab(tabId, btn) {
 
 
 function searchPayChild() {
-  const q   = document.getElementById('payChildSearch').value.trim();
-  const box = document.getElementById('payChildSuggestions');
+  const input = document.getElementById('payChildSearch');
+  const q     = input.value.trim();
+  const box   = document.getElementById('payChildSuggestions');
 
   if (q.length < 2) { box.style.display = 'none'; return; }
 
   const matches = allPaymentStatus.filter(p =>
     p.child_name.includes(q)
-  ).slice(0, 8);
+  ).slice(0, 6);
 
   if (!matches.length) { box.style.display = 'none'; return; }
 
+  // حساب موقع الـ input
+  const rect = input.getBoundingClientRect();
+  box.style.top   = (rect.bottom + 4) + 'px';
+  box.style.right = (window.innerWidth - rect.right) + 'px';
+  box.style.width = rect.width + 'px';
+
   box.innerHTML = matches.map(p => `
     <div onclick="selectChild('${p.child_id}','${p.child_name}','${p.class}')"
-      style="padding:10px 14px;cursor:pointer;border-bottom:1px solid var(--border)">
+      style="padding:12px 16px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.05);font-family:Cairo,sans-serif;font-size:0.9rem">
       ${p.child_name}
-      <span style="color:var(--text-muted);font-size:0.8rem">— ${p.class}</span>
+      <span style="color:rgba(255,255,255,0.4);font-size:0.78rem"> — ${p.class}</span>
     </div>
   `).join('');
 
   box.style.display = 'block';
 }
-
 function selectChild(id, name, cls) {
   document.getElementById('payChildSearch').value          = name;
   document.getElementById('payChildSuggestions').style.display = 'none';
