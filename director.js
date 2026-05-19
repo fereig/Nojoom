@@ -3,7 +3,7 @@
 /* ============================
    CONFIG
    ============================ */
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyRvGPuMC5OqRycF2iEpRroHs1PvYxEODlsPo3S1rnhCS-yYDJSr4ksuQf1eWjPRg6J7A/exec';
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbynuOkgC1lt-hp0-dIhpNFWjDAezOLam7gqHgBStgZazE7EdW4zxIzHazm2l8X0-atUkw/exec';
 
 /* ============================
    JSONP HELPER
