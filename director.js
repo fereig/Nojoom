@@ -438,7 +438,7 @@ async function sendToAppsScript(payload) {
     showLoading(false);
     let data = null;
     try { data = await res.json(); } catch(_) {}
-
+console.log('Apps Script response:', data); // ← أضف السطر ده
     if (data && data.status === 'duplicate') {
       showToast('⚠️ ' + data.message, 'error');
       return false;
