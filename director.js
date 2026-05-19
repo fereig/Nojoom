@@ -5,12 +5,6 @@
    ============================ */
 const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyOAJrciJcnSXsxCUsMXQcqCablNhRx_3x75Sm_XAiqW6B_BfwL_K2hW4HY1cm6TrM2Fw/exec';
 
-const N8N_BASE = 'http://localhost:5678/webhook';
-const WEBHOOKS = {
-  register: `${N8N_BASE}/RegisterChild`,
-  payments: `${N8N_BASE}/Payments`,
-};
-
 /* ============================
    JSONP HELPER
    ============================ */
@@ -275,7 +269,7 @@ function renderIncidents(items) {
 }
 
 /* ============================
-   PAYMENTS TAB — تحميل الأطفال من Sheets
+   PAYMENTS TAB — تحميل الأطفال
    ============================ */
 function loadPayChildren() {
   const cls = document.getElementById('payClass').value;
@@ -355,17 +349,20 @@ async function submitRegister() {
   if (!fee || fee <= 0) return showToast('⚠️ أدخلي الرسوم الشهرية', 'error');
 
   const payload = {
-    child_name:   childName,
-    class:        cls,
-    birth_date:   birthDate,
-    gender,
-    parent_name:  parentName,
-    phone,
-    fee,
-    payment_type: payType,
+    action: 'RegisterChild',
+    payload: {
+      child_name:   childName,
+      class:        cls,
+      birth_date:   birthDate,
+      gender,
+      parent_name:  parentName,
+      phone,
+      fee,
+      payment_type: payType,
+    }
   };
 
-  const ok = await sendToWebhook(WEBHOOKS.register, payload);
+  const ok = await sendToAppsScript(payload);
   if (ok) {
     ['regChildName','regParentName','regPhone','regFee','regBirthDate']
       .forEach(id => { document.getElementById(id).value = ''; });
@@ -391,16 +388,19 @@ async function submitPayment() {
   const cls       = opt?.dataset.class || document.getElementById('payClass').value;
 
   const payload = {
-    submission_id: `${cls.replace('-','')}-${month}-pay-${childId}-${uid()}`,
-    timestamp:     new Date().toISOString(),
-    child_id:      childId,
-    child_name:    childName,
-    class:         cls,
-    amount_paid:   amount,
-    month,
+    action: 'Payments',
+    payload: {
+      submission_id: `${cls.replace(/\s/g,'')}-${month}-pay-${childId}-${uid()}`,
+      timestamp:     new Date().toISOString(),
+      child_id:      childId,
+      child_name:    childName,
+      class:         cls,
+      amount_paid:   amount,
+      month,
+    }
   };
 
-  const ok = await sendToWebhook(WEBHOOKS.payments, payload);
+  const ok = await sendToAppsScript(payload);
   if (ok) {
     document.getElementById('payAmount').value = '';
     document.getElementById('payChild').value  = '';
@@ -409,18 +409,27 @@ async function submitPayment() {
 }
 
 /* ============================
-   HTTP HELPER
+   HTTP HELPER — Apps Script
    ============================ */
-async function sendToWebhook(url, payload) {
+async function sendToAppsScript(payload) {
   showLoading(true);
   try {
-    const res = await fetch(url, {
+    const res = await fetch(APPS_SCRIPT_URL, {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
       body:    JSON.stringify(payload),
     });
     showLoading(false);
-    if (res.ok) { showToast('✅ تم بنجاح!', 'success'); return true; }
+    const data = await res.json().catch(() => null);
+
+    if (data && data.status === 'duplicate') {
+      showToast('⚠️ ' + data.message, 'error');
+      return false;
+    }
+    if (res.ok && data && data.status === 'ok') {
+      showToast('✅ تم بنجاح!', 'success');
+      return true;
+    }
     showToast('❌ خطأ في الإرسال', 'error');
     return false;
   } catch(err) {
