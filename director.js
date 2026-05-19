@@ -129,33 +129,18 @@ function switchTab(tabId, btn) {
    Tries Apps Script first, falls back to demo data
    ============================ */
 async function loadDashboard() {
-  // Animate refresh button
   document.querySelector('.refresh-btn')?.classList.add('spinning');
   setTimeout(() => document.querySelector('.refresh-btn')?.classList.remove('spinning'), 800);
 
-  let data = null;
-
-  try {
-    // Apps Script call — expects JSON response from the doGet handler
-    const res = await fetch(`${APPS_SCRIPT_URL}?action=getDashboard`, {
-      method: 'GET',
-      mode: 'cors',
-    });
-    if (res.ok) {
-      const json = await res.json();
-      if (json && json.totalChildren !== undefined) data = json;
+  fetchJSONP(APPS_SCRIPT_URL + '?action=getDashboard', function(data) {
+    if (data && data.totalChildren !== undefined) {
+      renderDashboard(data);
+    } else {
+      renderDashboard(DEMO_DATA);
     }
-  } catch (e) {
-    console.warn('Apps Script unreachable, using demo data:', e.message);
-  }
-
-  // Fallback to demo
-  if (!data) data = DEMO_DATA;
-
-  renderDashboard(data);
-
-  document.getElementById('lastUpdated').textContent =
-    'آخر تحديث: ' + new Date().toLocaleTimeString('ar-EG');
+    document.getElementById('lastUpdated').textContent =
+      'آخر تحديث: ' + new Date().toLocaleTimeString('ar-EG');
+  });
 }
 
 function renderDashboard(d) {
@@ -323,15 +308,15 @@ function renderIncidents(items) {
    PAYMENT STATUS
    ============================ */
 async function loadPaymentStatus() {
-  let data = null;
-  try {
-    const res = await fetch(`${APPS_SCRIPT_URL}?action=getPaymentStatus`, { mode: 'cors' });
-    if (res.ok) { const j = await res.json(); if (j.paymentStatus) data = j.paymentStatus; }
-  } catch (e) { /* fallback */ }
-
-  if (!data) data = DEMO_DATA.paymentStatus;
-  renderPaymentStatus(data);
+  fetchJSONP(APPS_SCRIPT_URL + '?action=getPaymentStatus', function(data) {
+    if (data && data.paymentStatus) {
+      renderPaymentStatus(data.paymentStatus);
+    } else {
+      renderPaymentStatus(DEMO_DATA.paymentStatus);
+    }
+  });
 }
+
 
 function renderPaymentStatus(items) {
   const list = document.getElementById('payStatusList');
@@ -496,6 +481,26 @@ function showToast(msg, type = '') {
   t.className = 'toast show ' + type;
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => t.classList.remove('show'), 3200);
+}
+
+function fetchJSONP(url, callback) {
+  const callbackName = 'cb_' + Math.random().toString(36).slice(2);
+  const script = document.createElement('script');
+  script.src = url + '&callback=' + callbackName;
+  
+  window[callbackName] = function(data) {
+    delete window[callbackName];
+    document.body.removeChild(script);
+    callback(data);
+  };
+  
+  script.onerror = function() {
+    delete window[callbackName];
+    document.body.removeChild(script);
+    callback(null);
+  };
+  
+  document.body.appendChild(script);
 }
 
 function uid() {
