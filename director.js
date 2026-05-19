@@ -382,13 +382,16 @@ function renderIncidents(items) {
 let allPaymentStatus = [];
 
 function loadPaymentsTab() {
+  dfunction loadPaymentsTab() {
   document.getElementById('unpaidList').innerHTML =
     '<div class="loading-placeholder">⏳ جاري التحميل...</div>';
   document.getElementById('paidList').innerHTML =
     '<div class="loading-placeholder">⏳ جاري التحميل...</div>';
 
   const url = `${APPS_SCRIPT_URL}?action=getPaymentsTab`;
+  console.log('Loading URL:', url); // ← ضيف ده
   fetchJSONP(url, function(data) {
+    console.log('Response:', data); // ← وده
     if (data && data.paymentStatus) {
       allPaymentStatus = data.paymentStatus;
       filterPaymentStatus();
