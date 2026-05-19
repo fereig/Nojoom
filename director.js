@@ -233,9 +233,15 @@ function renderChart(values, labels) {
 
 function filterPaymentStatus() {
   const search = (document.getElementById('paySearch')?.value || '').trim();
-  const filtered = search
-    ? allPaymentStatus.filter(p => p.child_name.includes(search))
-    : allPaymentStatus;
+if (!search) {
+  document.getElementById('unpaidList').innerHTML = 
+    '<div class="loading-placeholder">🔍 ابحث عن طفل لعرض حالته</div>';
+  document.getElementById('paidList').innerHTML = '';
+  document.getElementById('unpaidCount').textContent = '';
+  document.getElementById('paidCount').textContent = '';
+  return;
+}
+const filtered = allPaymentStatus.filter(p => p.child_name.includes(search));
 
   const unpaid = filtered.filter(p => p.status !== 'مدفوع');
   const paid   = filtered.filter(p => p.status === 'مدفوع');
