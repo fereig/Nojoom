@@ -78,6 +78,40 @@ function switchTab(tabId, btn) {
   }
 }
 
+
+
+function searchPayChild() {
+  const q   = document.getElementById('payChildSearch').value.trim();
+  const box = document.getElementById('payChildSuggestions');
+
+  if (q.length < 2) { box.style.display = 'none'; return; }
+
+  const matches = allPaymentStatus.filter(p =>
+    p.child_name.includes(q)
+  ).slice(0, 8);
+
+  if (!matches.length) { box.style.display = 'none'; return; }
+
+  box.innerHTML = matches.map(p => `
+    <div onclick="selectChild('${p.child_id}','${p.child_name}','${p.class}')"
+      style="padding:10px 14px;cursor:pointer;border-bottom:1px solid var(--border)">
+      ${p.child_name}
+      <span style="color:var(--text-muted);font-size:0.8rem">— ${p.class}</span>
+    </div>
+  `).join('');
+
+  box.style.display = 'block';
+}
+
+function selectChild(id, name, cls) {
+  document.getElementById('payChildSearch').value          = name;
+  document.getElementById('payChildSuggestions').style.display = 'none';
+  const btn             = document.getElementById('paySubmitBtn');
+  btn.dataset.childId   = id;
+  btn.dataset.childName = name;
+  btn.dataset.class     = cls;
+  btn.disabled          = false;
+}
 /* ============================
    LOAD DASHBOARD
    ============================ */
