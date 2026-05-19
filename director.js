@@ -38,6 +38,17 @@ function fetchJSONP(url, callback) {
 }
 
 
+function selectChild(id, name, cls) {
+  document.getElementById('payChildSearch').value = name;
+  document.getElementById('payChildSuggestions').style.display = 'none';
+  const btn             = document.getElementById('paySubmitBtn');
+  btn.dataset.childId   = id;
+  btn.dataset.childName = name;
+  btn.dataset.class     = cls;
+  btn.disabled          = false;
+  btn.style.opacity     = '1';
+}
+
 
 function filterPayChildren() {
   loadPayChildren();
