@@ -11,195 +11,122 @@
 </head>
 <body>
 
-  <!-- TOP BAR -->
   <header class="topbar">
     <div class="topbar-logo">
       <span class="logo-star">★</span>
       <span class="logo-text">نجوم</span>
     </div>
     <div class="topbar-center">
-      <span class="teacher-name" id="teacherNameDisplay">Miss Sara</span>
+      <span class="teacher-name" id="teacherNameDisplay">المعلمة</span>
       <span class="sep">·</span>
-      <span class="class-name" id="classNameDisplay">Pre-A</span>
+      <span class="class-name" id="classNameDisplay">الفصل</span>
     </div>
     <div class="topbar-date" id="todayDate"></div>
   </header>
 
-  <!-- SETUP MODAL -->
   <div class="modal-overlay" id="setupModal">
     <div class="modal-box">
       <div class="modal-icon">👩‍🏫</div>
-      <h2 class="modal-title">أهلاً بك في نجوم</h2>
-      <p class="modal-sub">أدخلي بياناتك للبدء</p>
+      <h3 class="modal-title">تسجيل دخول المعلمة</h3>
       <div class="field-group">
         <label>اسم المعلمة</label>
-        <input type="text" id="setupTeacher" placeholder="Miss Sara" />
+        <input type="text" id="setupTeacherName" placeholder="مثال: أستاذة سارة" />
       </div>
       <div class="field-group">
-        <label>الفصل الدراسي</label>
-        <select id="setupClass">
-          <option value="Pre-A">Pre — A</option>
-          <option value="Pre-B">Pre — B</option>
-          <option value="KG1-A">KG1 — A</option>
-          <option value="KG1-B">KG1 — B</option>
-          <option value="KG2-A">KG2 — A</option>
-          <option value="KG2-B">KG2 — B</option>
-        </select>
+        <label>اسم الفصل / القاعة</label>
+        <input type="text" id="setupClassName" placeholder="مثال: روضة أ" />
       </div>
-      <button class="btn-primary full" onclick="saveSetup()">ابدأي العمل ←</button>
+      <button class="btn-submit" onclick="saveSetup()">دخول وبدء اليوم الدراسي 🚀</button>
     </div>
   </div>
 
-  <!-- TABS -->
-  <nav class="tabs">
-    <button class="tab active" onclick="switchTab('attendance', this)">
-      <span class="tab-icon">📋</span>
-      <span class="tab-label">الحضور</span>
+  <nav class="bottom-nav">
+    <button class="nav-item active" onclick="document.querySelectorAll('.app-section').forEach(s=>s.classList.remove('active')); document.getElementById('attendanceSection').classList.add('active'); document.querySelectorAll('.nav-item').forEach(b=>b.classList.remove('active')); this.classList.add('active');">
+      <span>📝</span><span>الحضور</span>
     </button>
-    <button class="tab" onclick="switchTab('notes', this)">
-      <span class="tab-icon">📝</span>
-      <span class="tab-label">الملاحظات</span>
+    <button class="nav-item" onclick="document.querySelectorAll('.app-section').forEach(s=>s.classList.remove('active')); document.getElementById('notesSection').classList.add('active'); document.querySelectorAll('.nav-item').forEach(b=>b.classList.remove('active')); this.classList.add('active');">
+      <span>💡</span><span>ملاحظات</span>
     </button>
-    <button class="tab" onclick="switchTab('incidents', this)">
-      <span class="tab-icon">🚨</span>
-      <span class="tab-label">الحوادث</span>
+    <button class="nav-item" onclick="document.querySelectorAll('.app-section').forEach(s=>s.classList.remove('active')); document.getElementById('incidentsSection').classList.add('active'); document.querySelectorAll('.nav-item').forEach(b=>b.classList.remove('active')); this.classList.add('active');">
+      <span>🚨</span><span>حوادث</span>
     </button>
-    <button class="tab" onclick="switchTab('assessments', this)">
-      <span class="tab-icon">📊</span>
-      <span class="tab-label">التقييمات</span>
+    <button class="nav-item" onclick="document.querySelectorAll('.app-section').forEach(s=>s.classList.remove('active')); document.getElementById('assessmentsSection').classList.add('active'); document.querySelectorAll('.nav-item').forEach(b=>b.classList.remove('active')); this.classList.add('active'); buildAssessmentsDOM();">
+      <span>📊</span><span>التقييمات</span>
     </button>
   </nav>
 
-  <main class="main">
+  <main class="content-container" style="padding-bottom: 5rem;">
 
-    <!-- ======= TAB 1: ATTENDANCE ======= -->
-    <section class="tab-content active" id="tab-attendance">
-      <div class="section-header">
-        <div>
-          <h2 class="section-title">تسجيل الحضور</h2>
-          <p class="section-sub">اختاري الغائبين فقط — الباقي حاضر تلقائياً</p>
-        </div>
-        <div class="date-badge" id="attendanceDateBadge"></div>
+    <section id="attendanceSection" class="app-section active">
+      <h2 class="section-title">📝 كشف الحضور والغياب اليومي</h2>
+      <div class="student-list" id="attendanceList">
+        <div class="loading-placeholder">⏳ جاري تحميل قائمة الأطفال...</div>
       </div>
-
-      <div class="children-grid" id="attendanceGrid"></div>
-
-      <div class="summary-bar">
-        <span class="sum-item green">✅ حاضرون: <strong id="presentCount">0</strong></span>
-        <span class="sum-item red">❌ غائبون: <strong id="absentCount">0</strong></span>
-      </div>
-
       <button class="btn-submit" onclick="submitAttendance()">
-        <span class="btn-icon">📤</span> إرسال تقرير الحضور
+        <span class="btn-icon">💾</span> حفظ وإرسال الكشف للمديرة
       </button>
     </section>
 
-    <!-- ======= TAB 2: NOTES ======= -->
-    <section class="tab-content" id="tab-notes">
-      <div class="section-header">
-        <div>
-          <h2 class="section-title">ملاحظة على طفل</h2>
-          <p class="section-sub">سيتم إرسال الملاحظة لولي الأمر فوراً</p>
-        </div>
-      </div>
-
-      <div class="form-card">
+    <section id="notesSection" class="app-section">
+      <h2 class="section-title">💡 إضافة ملاحظة سريعة عن طفل</h2>
+      <div class="card">
         <div class="field-group">
           <label>اسم الطفل</label>
-          <select id="noteChild">
-            <option value="">— اختاري —</option>
+          <select id="noteChildSelect">
+            <option value="">-- اختر الطفل --</option>
           </select>
         </div>
         <div class="field-group">
           <label>نوع الملاحظة</label>
-          <div class="type-cards">
-            <div class="type-card selected" data-value="سلوك" onclick="selectNoteType(this)">
-              <span>⚠️</span><span>سلوك</span>
+          <div class="note-cards">
+            <div class="note-card selected" onclick="selectNoteType(this, 'سلوك')">
+              <span>⚠️</span><span>سلوكية</span>
             </div>
-            <div class="type-card" data-value="مستلزمات" onclick="selectNoteType(this)">
-              <span>🎒</span><span>مستلزمات</span>
-            </div>
-            <div class="type-card" data-value="صحة" onclick="selectNoteType(this)">
-              <span>🏥</span><span>صحة</span>
-            </div>
-            <div class="type-card" data-value="إيجابية" onclick="selectNoteType(this)">
-              <span>⭐</span><span>إيجابية</span>
+            <div class="note-card" onclick="selectNoteType(this, 'أكاديمي')">
+              <span>💡</span><span>أكاديمية</span>
             </div>
           </div>
         </div>
         <div class="field-group">
           <label>نص الملاحظة</label>
-          <textarea id="noteText" rows="4" placeholder="اكتبي الملاحظة هنا..."></textarea>
+          <textarea id="noteText" rows="3" placeholder="اكتبي ملخص ما حدث مع الطفل اليوم..."></textarea>
         </div>
         <button class="btn-submit" onclick="submitNote()">
-          <span class="btn-icon">📝</span> إرسال الملاحظة
+          <span class="btn-icon">📤</span> إرسال الملاحظة
         </button>
       </div>
     </section>
 
-    <!-- ======= TAB 3: INCIDENTS ======= -->
-    <section class="tab-content" id="tab-incidents">
-      <div class="section-header">
-        <div>
-          <h2 class="section-title">تسجيل حادثة</h2>
-          <p class="section-sub">وثّقي الحادثة والإجراء المتخذ</p>
-        </div>
-      </div>
-
-      <div class="form-card">
+    <section id="incidentsSection" class="app-section">
+      <h2 class="section-title" style="color:#ef4444">🚨 تقرير حادث طارئ فورى</h2>
+      <div class="card" style="border-top: 4px solid #ef4444;">
         <div class="field-group">
           <label>اسم الطفل</label>
-          <select id="incidentChild">
-            <option value="">— اختاري —</option>
+          <select id="incidentChildSelect">
+            <option value="">-- اختر الطفل --</option>
           </select>
         </div>
         <div class="field-group">
-          <label>نوع الحادثة</label>
-          <div class="radio-group">
-            <label class="radio-option"><input type="radio" name="incidentType" value="وقوع" checked /> وقوع</label>
-            <label class="radio-option"><input type="radio" name="incidentType" value="شجار" /> شجار</label>
-            <label class="radio-option"><input type="radio" name="incidentType" value="مرض" /> مرض</label>
-            <label class="radio-option"><input type="radio" name="incidentType" value="أخرى" /> أخرى</label>
-          </div>
-        </div>
-        <div class="field-group">
-          <label>درجة الخطورة</label>
+          <label>مستوى الخطورة</label>
           <div class="severity-cards">
-            <div class="severity-card" data-value="بسيط" onclick="selectSeverity(this)">
-              <span>ℹ️</span><span>بسيط</span>
-            </div>
-            <div class="severity-card selected" data-value="متوسط" onclick="selectSeverity(this)">
-              <span>⚠️</span><span>متوسط</span>
-            </div>
-            <div class="severity-card danger" data-value="خطير" onclick="selectSeverity(this)">
-              <span>🚨</span><span>خطير</span>
-            </div>
+            <div class="severity-card" onclick="selectSeverity(this, 'بسيط')">🟢 بسيط</div>
+            <div class="severity-card selected" onclick="selectSeverity(this, 'متوسط')">🟡 متوسط</div>
+            <div class="severity-card" onclick="selectSeverity(this, 'حرج')">🔴 حرج جداً</div>
           </div>
         </div>
         <div class="field-group">
-          <label>تفاصيل الحادثة</label>
-          <textarea id="incidentDetails" rows="3" placeholder="صفي ما حدث..."></textarea>
+          <label>تفاصيل الحادث الإسعافي</label>
+          <textarea id="incidentText" rows="3" placeholder="ماذا حدث؟ وما الإجراء الإسعافي الذي تم اتخاذه..."></textarea>
         </div>
-        <div class="field-group">
-          <label>الإجراء المتخذ</label>
-          <textarea id="incidentAction" rows="3" placeholder="صفي ما تم عمله..."></textarea>
-        </div>
-        <button class="btn-submit" onclick="submitIncident()">
-          <span class="btn-icon">🚨</span> تسجيل الحادثة
+        <button class="btn-submit" style="background:#ef4444" onclick="submitIncident()">
+          <span class="btn-icon">📢</span> إرسال إشعار عاجل للمديرة
         </button>
       </div>
     </section>
 
-    <!-- ======= TAB 4: ASSESSMENTS ======= -->
-    <section class="tab-content" id="tab-assessments">
-      <div class="section-header">
-        <div>
-          <h2 class="section-title">تقييم الأطفال</h2>
-          <p class="section-sub">اختاري المادة ثم قيّمي كل طفل</p>
-        </div>
-      </div>
-
-      <div class="form-card" style="margin-bottom:1rem">
+    <section id="assessmentsSection" class="app-section">
+      <h2 class="section-title">📊 التقييم المهاري للطلاب الحاضرين</h2>
+      <div class="card" style="margin-bottom:1rem">
         <div class="field-group" style="margin:0">
           <label>المادة الدراسية</label>
           <div class="subject-cards">
@@ -231,13 +158,11 @@
 
   </main>
 
-  <!-- TOAST -->
   <div class="toast" id="toast"></div>
 
-  <!-- LOADING OVERLAY -->
   <div class="loading-overlay" id="loadingOverlay">
     <div class="spinner"></div>
-    <div class="loading-text">جاري الإرسال...</div>
+    <div class="loading-text">جاري الحفظ والمزامنة...</div>
   </div>
 
   <script src="teacher.js"></script>
