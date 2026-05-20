@@ -22,7 +22,8 @@ const SUBJECTS = {
 let teacherName = '';
 let className   = '';
 let children    = [];
-
+let attendanceSubmitted = false;
+let presentChildren     = [];
 let attendanceState   = {};
 let selectedNoteType  = 'سلوك';
 let selectedSeverity  = 'متوسط';
