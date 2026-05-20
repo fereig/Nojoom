@@ -45,7 +45,6 @@
     <!-- ======= TAB 1: DASHBOARD ======= -->
     <section class="tab-content active" id="tab-dashboard">
 
-      <!-- KPI CARDS -->
       <div class="kpi-grid" id="kpiGrid">
         <div class="kpi-card blue skeleton">
           <div class="kpi-icon">👦</div>
@@ -81,7 +80,6 @@
         </div>
       </div>
 
-      <!-- CLASSES SUMMARY -->
       <div class="section-title-row">
         <h3 class="section-heading">الفصول الدراسية</h3>
         <span class="section-sub-label" id="lastUpdated"></span>
@@ -90,7 +88,6 @@
         <div class="loading-placeholder">⏳ جاري تحميل البيانات...</div>
       </div>
 
-      <!-- ATTENDANCE CHART -->
       <div class="section-title-row" style="margin-top:1.5rem">
         <h3 class="section-heading">الحضور — آخر 7 أيام</h3>
       </div>
@@ -98,7 +95,6 @@
         <canvas id="attendanceChart" height="160"></canvas>
       </div>
 
-      <!-- RECENT PAYMENTS -->
       <div class="section-title-row" style="margin-top:1.5rem">
         <h3 class="section-heading">آخر المدفوعات</h3>
       </div>
@@ -106,7 +102,6 @@
         <div class="loading-placeholder">⏳ جاري التحميل...</div>
       </div>
 
-      <!-- INCIDENTS & NOTES -->
       <div class="section-title-row" style="margin-top:1.5rem">
         <h3 class="section-heading">آخر الحوادث والملاحظات</h3>
       </div>
@@ -126,7 +121,6 @@
       </div>
 
       <div class="form-card">
-
         <div class="form-row">
           <div class="field-group">
             <label>اسم الطفل <span class="req">*</span></label>
@@ -188,13 +182,13 @@
             <label>نوع الدفع</label>
             <div class="radio-group">
               <label class="radio-option">
-                <input type="radio" name="paymentType" value="monthly" checked /> شهري
+                <input type="radio" name="paymentType" value="شهري" checked /> شهري
               </label>
               <label class="radio-option">
-                <input type="radio" name="paymentType" value="termly" /> ترمي
+                <input type="radio" name="paymentType" value="ترمي" /> ترمي
               </label>
               <label class="radio-option">
-                <input type="radio" name="paymentType" value="yearly" /> سنوي
+                <input type="radio" name="paymentType" value="سنوي" /> سنوي
               </label>
             </div>
           </div>
@@ -203,87 +197,76 @@
         <button class="btn-submit" onclick="submitRegister()">
           <span>➕</span> تسجيل الطالب
         </button>
-
       </div>
     </section>
 
     <!-- ======= TAB 3: PAYMENTS ======= -->
-   <!-- ======= TAB 3: PAYMENTS ======= -->
-<!-- ======= TAB 3: PAYMENTS ======= -->
-<section class="tab-content" id="tab-payments">
-  <div class="section-header">
-    <div>
-      <h2 class="section-title">إدخال دفعة</h2>
-      <p class="section-sub">تُرسَل إيصال تلقائي لولي الأمر على Telegram</p>
-    </div>
-  </div>
-
-<div class="field-group" style="position:relative;margin-bottom:1rem">
-  <label>اسم الطفل <span class="req">*</span></label>
-  <input type="text" id="payChildSearch" placeholder="ابحث باسم الطفل..."
-    oninput="searchPayChild()" autocomplete="off" />
-<div id="payChildSuggestions" style="
-  background:#1e1e2e;
-  border:1px solid rgba(255,255,255,0.1);
-  border-radius:10px;
-  max-height:180px;
-  overflow-y:auto;
-  display:none;
-  position:fixed;
-  z-index:9999;
-  min-width:300px;
-  box-shadow:0 8px 24px rgba(0,0,0,0.4);
-"></div>
-</div>
-  
-  <div class="form-card" style="margin-bottom:1.5rem">
-    <div class="form-row">
-      <div class="field-group">
-        <label>المبلغ المدفوع (جنيه) <span class="req">*</span></label>
-        <input type="number" id="payAmount" placeholder="1500" min="0" />
+    <section class="tab-content" id="tab-payments">
+      <div class="section-header">
+        <div>
+          <h2 class="section-title">إدخال دفعة</h2>
+          <p class="section-sub">تُرسَل إيصال تلقائي لولي الأمر على Telegram</p>
+        </div>
       </div>
-      <div class="field-group">
-        <label>الشهر <span class="req">*</span></label>
-        <input type="month" id="payMonth" />
+
+      <!-- بحث الطفل -->
+      <div class="field-group" style="position:relative;margin-bottom:1rem">
+        <label>اسم الطفل <span class="req">*</span></label>
+        <input type="text" id="payChildSearch" placeholder="ابحث باسم الطفل..."
+          oninput="searchPayChild()" autocomplete="off" />
+        <div id="payChildSuggestions" style="
+          background:#1e1e2e;
+          border:1px solid rgba(255,255,255,0.1);
+          border-radius:10px;
+          max-height:180px;
+          overflow-y:auto;
+          display:none;
+          position:fixed;
+          z-index:9999;
+          min-width:300px;
+          box-shadow:0 8px 24px rgba(0,0,0,0.4);
+        "></div>
       </div>
-    </div>
-    <button class="btn-submit" id="paySubmitBtn" onclick="submitPayment()" disabled>
-      <span>💰</span> تسجيل الدفعة
-    </button>
-  </div>
 
-  <div class="section-title-row">
-    <h3 class="section-heading">حالة التحصيل — هذا الشهر</h3>
-    <button class="refresh-btn" onclick="loadPaymentsTab()">↻</button>
-  </div>
-  <div class="field-group" style="margin-bottom:1rem">
-    <input type="text" id="paySearch" placeholder="🔍 ابحث باسم الطفل..."
-      oninput="filterPaymentStatus()" />
-  </div>
+      <div class="form-card" style="margin-bottom:1.5rem">
+        <div class="form-row">
+          <div class="field-group">
+            <label>المبلغ المدفوع (جنيه) <span class="req">*</span></label>
+            <input type="number" id="payAmount" placeholder="1500" min="0" />
+          </div>
+          <div class="field-group">
+            <label>الشهر <span class="req">*</span></label>
+            <input type="month" id="payMonth" />
+          </div>
+        </div>
+        <button class="btn-submit" id="paySubmitBtn" onclick="submitPayment()" disabled style="opacity:0.5">
+          <span>💰</span> تسجيل الدفعة
+        </button>
+      </div>
 
-  <div class="section-title-row">
-    <h3 class="section-heading" style="color:#ef4444">❌ لم يدفع / جزئي</h3>
-    <span id="unpaidCount" style="font-size:0.8rem;color:var(--text-muted)"></span>
-  </div>
-  <div class="pay-status-list" id="unpaidList">
-    <div class="loading-placeholder">⏳ جاري التحميل...</div>
-  </div>
+      <!-- حالة التحصيل -->
+      <div class="section-title-row">
+        <h3 class="section-heading">حالة التحصيل — هذا الشهر</h3>
+        <button class="refresh-btn" onclick="loadPaymentsTab()">↻</button>
+      </div>
+      <div class="field-group" style="margin-bottom:1rem">
+        <input type="text" id="paySearch" placeholder="🔍 ابحث باسم الطفل..."
+          oninput="filterPaymentStatus()" />
+      </div>
 
-  <div class="section-title-row" style="margin-top:1.5rem">
-    <h3 class="section-heading" style="color:#22c55e">✅ دفعوا كامل</h3>
-    <span id="paidCount" style="font-size:0.8rem;color:var(--text-muted)"></span>
-  </div>
-  <div class="pay-status-list" id="paidList">
-    <div class="loading-placeholder">⏳ جاري التحميل...</div>
-  </div>
-
-</section>
-
-      <!-- PAYMENT STATUS TABLE -->
-      
-      <div class="pay-status-list" id="payStatusList">
+      <div class="section-title-row">
+        <h3 class="section-heading" style="color:#ef4444">❌ لم يدفع / جزئي</h3>
+        <span id="unpaidCount" style="font-size:0.8rem;color:var(--text-muted)"></span>
+      </div>
+      <div class="pay-status-list" id="unpaidList">
         <div class="loading-placeholder">⏳ جاري التحميل...</div>
       </div>
+
+      <div class="section-title-row" style="margin-top:1.5rem">
+        <h3 class="section-heading" style="color:#22c55e">✅ دفعوا كامل</h3>
+        <span id="paidCount" style="font-size:0.8rem;color:var(--text-muted)"></span>
+      </div>
+      <div class="pay-status-list" id="paidList"></div>
 
     </section>
 
@@ -292,8 +275,11 @@
   <!-- TOAST -->
   <div class="toast" id="toast"></div>
 
-  <!-- LOADING -->
- 
+  <!-- LOADING OVERLAY -->
+  <div class="loading-overlay" id="loadingOverlay">
+    <div class="spinner"></div>
+    <div class="loading-text">جاري الإرسال...</div>
+  </div>
 
   <script src="director.js"></script>
 </body>
