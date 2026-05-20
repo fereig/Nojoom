@@ -75,48 +75,24 @@ async function saveSetup() {
    ============================ */
 async function loadChildren(cls) {
   showLoading(true);
-
-  // browser cache — لو نفس الفصل اتحمل قبل كده
-  const cacheKey = 'children_' + cls;
-  const cached   = sessionStorage.getItem(cacheKey);
-  if (cached) {
-    children = JSON.parse(cached);
-    showLoading(false);
-    presentChildren = [...children];
-    initAll();
-    return;
+  try {
+    const url  = ${APPS_SCRIPT_URL}?action=getChildren&class=${encodeURIComponent(cls)};
+    const res  = await fetch(url);
+    const data = await res.json();
+    const list = data.children || data.data;
+    if (data && Array.isArray(list)) {
+      children = list.map(c => ({ child_id: c.child_id, child_name: c.child_name }));
+    } else {
+      throw new Error('بيانات غير صحيحة');
+    }
+  } catch (err) {
+    console.error(err);
+    showToast('⚠️ تعذر تحميل بيانات الأطفال', 'error');
+    children = [];
   }
-
-  return new Promise(resolve => {
-    const callbackName = 'cb_' + Math.random().toString(36).slice(2);
-    const script       = document.createElement('script');
-    const url = `${APPS_SCRIPT_URL}?action=getChildren&class=${encodeURIComponent(cls)}&callback=${callbackName}`;
-    script.src = url;
-
-    const timeout = setTimeout(() => {
-      cleanup();
-      showToast('⚠️ تعذر تحميل بيانات الأطفال', 'error');
-      children = [];
-      showLoading(false);
-      initAll();
-      resolve();
-    }, 10000);
-
-    window[callbackName] = function(data) {
-      cleanup();
-      const list = data && (data.children || data.data);
-      if (Array.isArray(list)) {
-        children = list.map(c => ({ child_id: c.child_id, child_name: c.child_name }));
-        sessionStorage.setItem(cacheKey, JSON.stringify(children));
-      } else {
-        showToast('⚠️ تعذر تحميل بيانات الأطفال', 'error');
-        children = [];
-      }
-      showLoading(false);
-      presentChildren = [...children];
-      initAll();
-      resolve();
-    };
+  showLoading(false);
+  initAll();
+}
 
     script.onerror = function() {
       cleanup();
