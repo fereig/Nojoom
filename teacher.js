@@ -1,9 +1,9 @@
-/* teacher.js — واجهة المعلمة | مٌطور ومسرع للأداء العالي */
+/* teacher.js — واجهة المعلمة | نجوم */
 
 /* ============================
    CONFIG
    ============================ */
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwET2jd8CtgKvozjNdab7st4GkD8roSqKnY30KyuUzRVpiDcSXTRIBUv0TKfjwwlv_BiQ/exec';
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzZvOO382UqsC1hLoooqOtkMgTWDjIbBZlUlzhwIh3h5XeMN3_OWJ5q98Ux-0L2q8_UtA/exec';
 
 /* ============================
    SUBJECTS
@@ -22,407 +22,361 @@ const SUBJECTS = {
 let teacherName = '';
 let className   = '';
 let children    = [];
-let presentChildren = [];
 
-let attendanceState      = {};
-let attendanceSubmitted  = false;
-
+let attendanceState   = {};
 let selectedNoteType  = 'سلوك';
 let selectedSeverity  = 'متوسط';
 let selectedSubject   = 'arabic_letters';
 let assessmentRatings = {};
 
 /* ============================
-   JSONP HELPER
-   ============================ */
-function fetchJSONP(url, callback) {
-  const callbackName = 'cb_' + Math.random().toString(36).slice(2);
-  const script = document.createElement('script');
-  script.src = url + '&callback=' + callbackName;
-
-  const timeout = setTimeout(() => {
-    delete window[callbackName];
-    if (document.body.contains(script)) document.body.removeChild(script);
-    console.warn('JSONP timeout:', url);
-    callback(null);
-  }, 20000);
-
-  window[callbackName] = function(data) {
-    clearTimeout(timeout);
-    delete window[callbackName];
-    if (document.body.contains(script)) document.body.removeChild(script);
-    callback(data);
-  };
-
-  script.onerror = function() {
-    clearTimeout(timeout);
-    delete window[callbackName];
-    if (document.body.contains(script)) document.body.removeChild(script);
-    console.error('JSONP script error:', url);
-    callback(null);
-  };
-
-  document.body.appendChild(script);
-}
-
-/* ============================
-   INIT & SETUP
+   INIT
    ============================ */
 document.addEventListener('DOMContentLoaded', () => {
   setTodayDate();
-  // إظهار مودال الإعدادات أولاً كما هو في التصميم الحالي
-  const modal = document.getElementById('setupModal');
-  if(modal) modal.classList.add('show');
+  showSetupModal();
 });
 
 function setTodayDate() {
-  const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-  const str = new Date().toLocaleDateString('ar-EG', options);
-  document.getElementById('todayDate').textContent = str;
+  const str = new Date().toLocaleDateString('ar-EG', {
+    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+  });
+  document.getElementById('todayDate').textContent            = str;
+  document.getElementById('attendanceDateBadge').textContent  = str;
 }
 
-function saveSetup() {
-  const tInput = document.getElementById('setupTeacherName');
-  const cInput = document.getElementById('setupClassName');
+/* ============================
+   SETUP MODAL
+   ============================ */
+function showSetupModal() {
+  document.getElementById('setupModal').classList.remove('hidden');
+  document.getElementById('setupTeacher').value = '';
+  document.getElementById('setupClass').value   = 'KG1-A';
+}
 
-  teacherName = tInput.value.trim();
-  className   = cInput.value.trim();
+async function saveSetup() {
+  const t = document.getElementById('setupTeacher').value.trim();
+  const c = document.getElementById('setupClass').value;
+  if (!t) { showToast('⚠️ أدخلي اسمك أولاً', 'error'); return; }
 
-  if(!teacherName || !className) {
-    showToast('⚠️ من فضلك ادخلي الاسم والفصل', 'error');
-    return;
-  }
+  teacherName = t;
+  className   = c;
 
   document.getElementById('teacherNameDisplay').textContent = teacherName;
   document.getElementById('classNameDisplay').textContent   = className;
+  document.getElementById('setupModal').classList.add('hidden');
 
-  document.getElementById('setupModal').classList.remove('show');
-  
-  // تحميل قائمة الطلاب فور حفظ الإعدادات
-  loadChildrenList();
+  await loadChildren(className);
 }
 
 /* ============================
-   DATA LOADING (MODIFIED FOR HIGH PERFORMANCE)
+   LOAD CHILDREN
    ============================ */
-function loadChildrenList() {
+async function loadChildren(cls) {
   showLoading(true);
-  
-  // تعديل ذكي: نطلب فقط قائمة الطلاب الجاهزة من الكاش لتسريع الواجهة بنسبة 300%
-  fetchJSONP(APPS_SCRIPT_URL + '?req=children', (data) => {
-    showLoading(false);
-    if(!data || !data.children) {
-      showToast('❌ فشل جلب قائمة الأطفال. تحققي من الإنترنت', 'error');
-      return;
-    }
+  try {
+    const url  = `${APPS_SCRIPT_URL}?action=getChildren&class=${encodeURIComponent(cls)}`;
+    const res  = await fetch(url);
+    const data = await res.json();
+    const list = data.children || data.data;
 
-    children = data.children;
-    
-    // تهيئة حالة الحضور الافتراضية للطلاب
-    children.forEach(c => {
-      attendanceState[c.id] = 'حاضر';
-    });
-
-    // بناء واجهات الـ DOM الحالية تماماً دون أي تغيير في التصميم
-    buildAttendanceDOM();
-    buildNotesDOM();
-    buildIncidentsDOM();
-    buildAssessmentsDOM();
-  });
-}
-
-/* ============================
-   DOM BUILDERS
-   ============================ */
-function buildAttendanceDOM() {
-  const container = document.getElementById('attendanceList');
-  if(!container) return;
-  container.innerHTML = '';
-
-  if(attendanceSubmitted) {
-    container.innerHTML = '<div class="empty-state">✅ تم إرسال كشف الحضور والغياب لليوم بنجاح!</div>';
-    return;
-  }
-
-  children.forEach(c => {
-    const card = document.createElement('div');
-    card.className = 'student-card';
-    card.id = `att_card_${c.id}`;
-
-    const isPresent = attendanceState[c.id] === 'حاضر';
-    if(isPresent) card.classList.add('present');
-    else card.classList.add('absent');
-
-    card.innerHTML = `
-      <span class="student-name">${c.name}</span>
-      <div class="toggle-buttons">
-        <button class="btn-toggle present ${isPresent?'active':''}" onclick="setAttendance(${c.id}, 'حاضر')">حاضر</button>
-        <button class="btn-toggle absent ${!isPresent?'active':''}" onclick="setAttendance(${c.id}, 'غياب')">غياب</button>
-      </div>
-    `;
-    container.appendChild(card);
-  });
-}
-
-function setAttendance(id, status) {
-  if(attendanceSubmitted) return;
-  attendanceState[id] = status;
-  
-  const card = document.getElementById(`att_card_${id}`);
-  if(card) {
-    if(status === 'حاضر') {
-      card.classList.remove('absent');
-      card.classList.add('present');
-      card.querySelector('.btn-toggle.present').classList.add('active');
-      card.querySelector('.btn-toggle.absent').classList.remove('active');
+    if (data && Array.isArray(list)) {
+      children = list.map(c => ({ child_id: c.child_id, child_name: c.child_name }));
     } else {
-      card.classList.remove('present');
-      card.classList.add('absent');
-      card.querySelector('.btn-toggle.present').classList.remove('active');
-      card.querySelector('.btn-toggle.absent').classList.add('active');
+      throw new Error('بيانات غير صحيحة');
     }
+  } catch (err) {
+    console.error(err);
+    showToast('⚠️ تعذر تحميل بيانات الأطفال', 'error');
+    children = [];
   }
+  showLoading(false);
+  initAll();
 }
 
-function buildNotesDOM() {
-  const select = document.getElementById('noteChildSelect');
-  if(!select) return;
-  select.innerHTML = '<option value="">-- اختر الطفل --</option>';
-  children.forEach(c => {
-    const opt = document.createElement('option');
-    opt.value = c.id;
-    opt.textContent = c.name;
-    select.appendChild(opt);
-  });
+function initAll() {
+  buildAttendanceGrid();
+  buildChildSelects();
+  buildAssessmentGrid();
 }
 
-function buildIncidentsDOM() {
-  const select = document.getElementById('incidentChildSelect');
-  if(!select) return;
-  select.innerHTML = '<option value="">-- اختر الطفل --</option>';
-  children.forEach(c => {
-    const opt = document.createElement('option');
-    opt.value = c.id;
-    opt.textContent = c.name;
-    select.appendChild(opt);
-  });
+/* ============================
+   TABS
+   ============================ */
+function switchTab(tabId, btn) {
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-' + tabId).classList.add('active');
+  btn.classList.add('active');
 }
 
-function buildAssessmentsDOM() {
-  const grid = document.getElementById('assessmentGrid');
-  if(!grid) return;
+/* ============================
+   ATTENDANCE
+   ============================ */
+function buildAttendanceGrid() {
+  const grid = document.getElementById('attendanceGrid');
   grid.innerHTML = '';
+  attendanceState = {};
 
-  // فلترة قائمة الحاضرين فقط للتقييم
-  presentChildren = children.filter(c => attendanceState[c.id] === 'حاضر');
-
-  if(presentChildren.length === 0) {
-    grid.innerHTML = '<div class="empty-state">⚠️ يجب تحضير الطلاب أولاً؛ لا يوجد أطفال حاضرون للتقييم.</div>';
+  if (children.length === 0) {
+    grid.innerHTML = '<p style="color:var(--text-muted);text-align:center;padding:2rem;grid-column:1/-1">لا يوجد أطفال في هذا الفصل</p>';
+    updateAttendanceSummary();
     return;
   }
 
-  const sub = SUBJECTS[selectedSubject];
+  children.forEach(c => { attendanceState[c.child_id] = 'present'; });
 
-  presentChildren.forEach(c => {
-    if(!assessmentRatings[c.id]) {
-      assessmentRatings[c.id] = { score: 3, comment: '' };
-    }
-    const current = assessmentRatings[c.id];
-
-    const row = document.createElement('div');
-    row.className = 'assessment-row';
-
-    let starsHtml = '';
-    for(let s=1; s<=5; s++) {
-      starsHtml += `<span class="star ${s <= current.score ? 'active' : ''}" onclick="setRating(${c.id}, ${s})">★</span>`;
-    }
-
-    row.innerHTML = `
-      <div class="assess-info">
-        <span class="assess-child-name">${c.name}</span>
-        <div class="stars-container" id="stars_${c.id}">${starsHtml}</div>
-      </div>
-      <div class="assess-comment-box">
-        <input type="text" placeholder="ملاحظة مهارية (اختياري)..." value="${current.comment}" oninput="setComment(${c.id}, this.value)" />
-      </div>
+  children.forEach(child => {
+    const card = document.createElement('div');
+    card.className = 'child-card present';
+    card.dataset.id = child.child_id;
+    card.innerHTML = `
+      <div class="child-avatar">👤</div>
+      <span class="child-name">${child.child_name}</span>
+      <span class="child-status-icon">✅</span>
     `;
-    grid.appendChild(row);
+    card.addEventListener('click', () => toggleAttendance(child.child_id, card));
+    grid.appendChild(card);
   });
+
+  updateAttendanceSummary();
 }
 
-function setRating(childId, score) {
-  if(!assessmentRatings[childId]) assessmentRatings[childId] = { score: 3, comment: '' };
-  assessmentRatings[childId].score = score;
-
-  const container = document.getElementById(`stars_${childId}`);
-  if(container) {
-    const stars = container.querySelectorAll('.star');
-    stars.forEach((star, idx) => {
-      star.classList.toggle('active', (idx + 1) <= score);
-    });
+function toggleAttendance(childId, card) {
+  if (attendanceState[childId] === 'present') {
+    attendanceState[childId] = 'absent';
+    card.className = 'child-card absent';
+    card.querySelector('.child-status-icon').textContent = '❌';
+  } else {
+    attendanceState[childId] = 'present';
+    card.className = 'child-card present';
+    card.querySelector('.child-status-icon').textContent = '✅';
   }
+  updateAttendanceSummary();
 }
 
-function setComment(childId, val) {
-  if(!assessmentRatings[childId]) assessmentRatings[childId] = { score: 3, comment: '' };
-  assessmentRatings[childId].comment = val;
+function updateAttendanceSummary() {
+  const vals = Object.values(attendanceState);
+  document.getElementById('presentCount').textContent = vals.filter(s => s === 'present').length;
+  document.getElementById('absentCount').textContent  = vals.filter(s => s === 'absent').length;
 }
 
-/* ============================
-   TAB SWITCHING / SELECTIONS
-   ============================ */
-function selectNoteType(el, type) {
-  document.querySelectorAll('.note-card').forEach(c => c.classList.remove('selected'));
-  el.classList.add('selected');
-  selectedNoteType = type;
-}
-
-function selectSeverity(el, level) {
-  document.querySelectorAll('.severity-card').forEach(c => c.classList.remove('selected'));
-  el.classList.add('selected');
-  selectedSeverity = level;
-}
-
-function selectSubject(el) {
-  document.querySelectorAll('.subject-card').forEach(c => c.classList.remove('selected'));
-  el.classList.add('selected');
-  selectedSubject = el.getAttribute('data-tab') || el.getAttribute('data-subject');
-  buildAssessmentsDOM();
-}
-
-/* ============================
-   FORM SUBMISSIONS (POST)
-   ============================ */
 async function submitAttendance() {
-  if(attendanceSubmitted) return;
+  if (children.length === 0) return showToast('⚠️ لا يوجد أطفال', 'error');
 
-  const records = Object.keys(attendanceState).map(id => {
-    const child = children.find(c => String(c.id) === String(id));
-    return {
-      id:   id,
-      name: child ? child.name : '',
-      status: attendanceState[id]
-    };
+  const today   = todayISO();
+  const present = children.filter(c => attendanceState[c.child_id] === 'present');
+  const absent  = children.filter(c => attendanceState[c.child_id] === 'absent');
+
+  const payload = {
+    submission_id: `${className.replace('-','')}-${today}-${teacherName.replace(/\s/g,'')}-${uid()}`,
+    timestamp: new Date().toISOString(),
+    date: today,
+    class: className,
+    teacher: teacherName,
+    present: present.map(c => ({ child_id: c.child_id, child_name: c.child_name })),
+    absent:  absent.map(c => ({ child_id: c.child_id, child_name: c.child_name })),
+  };
+
+  await sendToAppsScript('Attendance', payload);
+}
+
+/* ============================
+   CHILD SELECTS (Notes + Incidents)
+   ============================ */
+function buildChildSelects() {
+  ['noteChild', 'incidentChild'].forEach(id => {
+    const sel = document.getElementById(id);
+    sel.innerHTML = '<option value="">— اختاري —</option>';
+    children.forEach(c => {
+      const opt = document.createElement('option');
+      opt.value       = c.child_id;
+      opt.textContent = c.child_name;
+      sel.appendChild(opt);
+    });
   });
+}
 
-  const now = new Date();
-  const dateStr = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
-
-  const payload = { date: dateStr, records };
-  const ok = await apiPost('Attendance', payload);
-  if(ok) {
-    attendanceSubmitted = true;
-    buildAttendanceDOM();
-    buildAssessmentsDOM(); // تحديث الحاضرين في تابة التقييمات
-  }
+/* ============================
+   NOTES
+   ============================ */
+function selectNoteType(el) {
+  document.querySelectorAll('.type-card').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+  selectedNoteType = el.dataset.value;
 }
 
 async function submitNote() {
-  const select = document.getElementById('noteChildSelect');
-  const textInput = document.getElementById('noteText');
+  const childId  = document.getElementById('noteChild').value;
+  const noteText = document.getElementById('noteText').value.trim();
 
-  const id = select.value;
-  const text = textInput.value.trim();
+  if (!childId)  return showToast('⚠️ اختاري الطفل أولاً', 'error');
+  if (!noteText) return showToast('⚠️ اكتبي الملاحظة أولاً', 'error');
 
-  if(!id || !text) {
-    showToast('⚠️ يرجى اختيار طفل وكتابة الملاحظة', 'error');
-    return;
-  }
-
-  const child = children.find(c => String(c.id) === String(id));
-  const payload = {
-    id,
-    name: child ? child.name : '',
-    type: selectedNoteType,
-    text
-  };
-
-  const ok = await apiPost('Notes', payload);
-  if(ok) {
-    textInput.value = '';
-    select.value = '';
-  }
-}
-
-async function submitIncident() {
-  const select = document.getElementById('incidentChildSelect');
-  const textInput = document.getElementById('incidentText');
-
-  const id = select.value;
-  const text = textInput.value.trim();
-
-  if(!id || !text) {
-    showToast('⚠️ يرجى اختيار طفل وكتابة تفاصيل الحادث', 'error');
-    return;
-  }
-
-  const child = children.find(c => String(c.id) === String(id));
-  const payload = {
-    id,
-    name: child ? child.name : '',
-    severity: selectedSeverity,
-    text
-  };
-
-  const ok = await apiPost('Incidents', payload);
-  if(ok) {
-    textInput.value = '';
-    select.value = '';
-  }
-}
-
-async function submitAssessments() {
-  if(presentChildren.length === 0) {
-    showToast('⚠️ لا يوجد أطفال حاضرون لتقييمهم حالياً', 'error');
-    return;
-  }
-
-  const ratings = presentChildren.map(c => {
-    const r = assessmentRatings[c.id] || { score: 3, comment: '' };
-    return {
-      id: c.id,
-      name: c.name,
-      score: r.score,
-      comment: r.comment
-    };
-  });
-
-  const now = new Date();
-  const dateStr = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
-  const subjectLabel = SUBJECTS[selectedSubject] ? SUBJECTS[selectedSubject].label : selectedSubject;
+  const child = children.find(c => c.child_id === childId);
+  const today = todayISO();
 
   const payload = {
-    date: dateStr,
-    subject: subjectLabel,
-    ratings
+    submission_id: `${className.replace('-','')}-${today}-note-${childId}-${uid()}`,
+    timestamp: new Date().toISOString(),
+    date: today,
+    class: className,
+    teacher: teacherName,
+    child_id: childId,
+    child_name: child.child_name,
+    note_type: selectedNoteType,
+    note: noteText,
   };
 
-  const ok = await apiPost('Assessments', payload);
-  if(ok) {
-    // تصقير التقييمات بعد الإرسال الناجح
-    assessmentRatings = {};
-    buildAssessmentsDOM();
+  const ok = await sendToAppsScript('Notes', payload);
+  if (ok) {
+    document.getElementById('noteChild').value = '';
+    document.getElementById('noteText').value  = '';
   }
 }
 
 /* ============================
-   API BRIDGE (POST)
+   INCIDENTS
    ============================ */
-async function apiPost(action, payload) {
+function selectSeverity(el) {
+  document.querySelectorAll('.severity-card').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+  selectedSeverity = el.dataset.value;
+}
+
+async function submitIncident() {
+  const childId = document.getElementById('incidentChild').value;
+  const details = document.getElementById('incidentDetails').value.trim();
+  const action  = document.getElementById('incidentAction').value.trim();
+  const incType = document.querySelector('input[name="incidentType"]:checked')?.value;
+
+  if (!childId) return showToast('⚠️ اختاري الطفل أولاً', 'error');
+  if (!details) return showToast('⚠️ أدخلي تفاصيل الحادثة', 'error');
+  if (!action)  return showToast('⚠️ أدخلي الإجراء المتخذ', 'error');
+
+  const child = children.find(c => c.child_id === childId);
+  const today = todayISO();
+
+  const payload = {
+    submission_id: `${className.replace('-','')}-${today}-incident-${childId}-${uid()}`,
+    timestamp: new Date().toISOString(),
+    date: today,
+    class: className,
+    teacher: teacherName,
+    child_id: childId,
+    child_name: child.child_name,
+    type: incType,
+    severity: selectedSeverity,
+    details,
+    action,
+  };
+
+  const ok = await sendToAppsScript('Incidents', payload);
+  if (ok) {
+    document.getElementById('incidentChild').value   = '';
+    document.getElementById('incidentDetails').value = '';
+    document.getElementById('incidentAction').value  = '';
+  }
+}
+
+/* ============================
+   ASSESSMENTS
+   ============================ */
+function selectSubject(el) {
+  document.querySelectorAll('.subject-card').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+  selectedSubject = el.dataset.subject;
+  buildAssessmentGrid();
+}
+
+function buildAssessmentGrid() {
+  const grid    = document.getElementById('assessmentGrid');
+  grid.innerHTML = '';
+  const subject  = SUBJECTS[selectedSubject];
+  assessmentRatings = {};
+
+  children.forEach(child => {
+    assessmentRatings[child.child_id] = {};
+    subject.skills.forEach(s => { assessmentRatings[child.child_id][s] = 'كويس'; });
+
+    const skillRows = subject.skills.map(skill => `
+      <div class="assess-skill-row">
+        <span class="skill-label">${skill}</span>
+        <div class="skill-btns">
+          <button class="skill-btn active-good"
+            onclick="setRating('${child.child_id}','${skill}','كويس',this)">كويس</button>
+          <button class="skill-btn"
+            onclick="setRating('${child.child_id}','${skill}','يحتاج متابعة',this)">يحتاج متابعة</button>
+          <button class="skill-btn"
+            onclick="setRating('${child.child_id}','${skill}','ضعيف',this)">ضعيف</button>
+        </div>
+      </div>
+    `).join('');
+
+    const card = document.createElement('div');
+    card.className = 'assess-card';
+    card.innerHTML = `
+      <div class="assess-name">👤 ${child.child_name}</div>
+      <div class="assess-skills">${skillRows}</div>
+    `;
+    grid.appendChild(card);
+  });
+}
+
+function setRating(childId, skill, value, btn) {
+  assessmentRatings[childId][skill] = value;
+  btn.closest('.assess-skill-row').querySelectorAll('.skill-btn').forEach(b => {
+    b.classList.remove('active-good', 'active-mid', 'active-bad');
+  });
+  if (value === 'كويس')              btn.classList.add('active-good');
+  else if (value === 'يحتاج متابعة') btn.classList.add('active-mid');
+  else                               btn.classList.add('active-bad');
+}
+
+async function submitAssessments() {
+  const subject     = SUBJECTS[selectedSubject];
+  const today       = todayISO();
+  const assessments = children
+    .map(child => ({
+      child_id:   child.child_id,
+      child_name: child.child_name,
+      ratings:    assessmentRatings[child.child_id] || {},
+    }))
+    .filter(child => Object.values(child.ratings).some(r => r !== 'كويس'));
+
+  if (assessments.length === 0) {
+    return showToast('✅ كل الأطفال تقييمهم كويس', 'success');
+  }
+
+  const payload = {
+    submission_id: `${className.replace('-','')}-${today}-assess-${selectedSubject}-${uid()}`,
+    timestamp: new Date().toISOString(),
+    date: today,
+    class: className,
+    teacher: teacherName,
+    subject: selectedSubject,
+    subject_label: subject.label,
+    skills: subject.skills,
+    assessments,
+  };
+
+  await sendToAppsScript('Assessments', payload);
+}
+
+/* ============================
+   HTTP HELPER — Apps Script فقط
+   ============================ */
+async function sendToAppsScript(action, payload) {
   showLoading(true);
   try {
-    const res = await fetch(APPS_SCRIPT_URL, {
-      method:  'POST',
-      mode:    'no-cors',
-      redirect: 'follow',
-      headers:  { 'Content-Type': 'text/plain' },
-      body:     JSON.stringify({ action, payload }),
+    await fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      body: JSON.stringify({ action, payload }),
     });
-
     showLoading(false);
-    showToast('✅ تم الإرسال بنجاح وتحديث النظام!', 'success');
+    showToast('✅ تم الإرسال بنجاح!', 'success');
     return true;
-
   } catch (err) {
     showLoading(false);
     console.error(err);
@@ -435,18 +389,22 @@ async function apiPost(action, payload) {
    UI HELPERS
    ============================ */
 function showLoading(show) {
-  const el = document.getElementById('loadingOverlay');
-  if(el) el.classList.toggle('show', show);
+  document.getElementById('loadingOverlay').classList.toggle('show', show);
 }
 
 let toastTimer;
 function showToast(msg, type = '') {
-  const toast = document.getElementById('toast');
-  if(!toast) return;
+  const toast   = document.getElementById('toast');
   toast.textContent = msg;
   toast.className   = 'toast show ' + type;
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => {
-    toast.className = 'toast';
-  }, 3500);
+  toastTimer = setTimeout(() => toast.classList.remove('show'), 3200);
+}
+
+function todayISO() {
+  return new Date().toISOString().split('T')[0];
+}
+
+function uid() {
+  return Math.random().toString(36).slice(2, 7);
 }
