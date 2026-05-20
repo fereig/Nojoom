@@ -395,14 +395,26 @@ async function submitAssessments() {
 async function sendToAppsScript(action, payload) {
   showLoading(true);
   try {
-    await fetch(APPS_SCRIPT_URL, {
-      method: 'POST',
-      mode: 'no-cors',
-      body: JSON.stringify({ action, payload }),
+    const res = await fetch(APPS_SCRIPT_URL, {
+      method:   'POST',
+      redirect: 'follow',
+      headers:  { 'Content-Type': 'text/plain' },
+      body:     JSON.stringify({ action, payload }),
     });
+
     showLoading(false);
+
+    let data = null;
+    try { data = await res.json(); } catch(_) {}
+
+    if (data && data.status === 'duplicate') {
+      showToast('⚠️ ' + data.message, 'error');
+      return false;
+    }
+
     showToast('✅ تم الإرسال بنجاح!', 'success');
     return true;
+
   } catch (err) {
     showLoading(false);
     console.error(err);
