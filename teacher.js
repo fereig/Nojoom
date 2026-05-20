@@ -185,10 +185,13 @@ async function submitAttendance() {
    CHILD SELECTS (Notes + Incidents)
    ============================ */
 function buildChildSelects() {
+  const list = attendanceSubmitted ? presentChildren : children;
+
   ['noteChild', 'incidentChild'].forEach(id => {
     const sel = document.getElementById(id);
+    if (!sel) return;
     sel.innerHTML = '<option value="">— اختاري —</option>';
-    children.forEach(c => {
+    list.forEach(c => {
       const opt = document.createElement('option');
       opt.value       = c.child_id;
       opt.textContent = c.child_name;
