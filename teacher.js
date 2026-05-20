@@ -322,7 +322,9 @@ function buildAssessmentGrid() {
   const subject  = SUBJECTS[selectedSubject];
   assessmentRatings = {};
 
-  children.forEach(child => {
+  const list = attendanceSubmitted ? presentChildren : children;
+
+  list.forEach(child => {
     assessmentRatings[child.child_id] = {};
     subject.skills.forEach(s => { assessmentRatings[child.child_id][s] = 'كويس'; });
 
