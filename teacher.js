@@ -162,6 +162,10 @@ function updateAttendanceSummary() {
 }
 
 async function submitAttendance() {
+  if (attendanceSubmitted) {
+    showToast('⚠️ تم إرسال الحضور من قبل اليوم', 'error');
+    return;
+  }
   if (children.length === 0) return showToast('⚠️ لا يوجد أطفال', 'error');
 
   const today   = todayISO();
@@ -171,16 +175,35 @@ async function submitAttendance() {
   const payload = {
     submission_id: `${className.replace('-','')}-${today}-${teacherName.replace(/\s/g,'')}-${uid()}`,
     timestamp: new Date().toISOString(),
-    date: today,
-    class: className,
-    teacher: teacherName,
-    present: present.map(c => ({ child_id: c.child_id, child_name: c.child_name })),
-    absent:  absent.map(c => ({ child_id: c.child_id, child_name: c.child_name })),
+    date:      today,
+    class:     className,
+    teacher:   teacherName,
+    present:   present.map(c => ({ child_id: c.child_id, child_name: c.child_name })),
+    absent:    absent.map(c => ({ child_id: c.child_id, child_name: c.child_name })),
   };
 
-  await sendToAppsScript('Attendance', payload);
-}
+  const ok = await sendToAppsScript('Attendance', payload);
 
+  if (ok) {
+    attendanceSubmitted = true;
+    presentChildren    = present;
+
+    buildChildSelects();
+    buildAssessmentGrid();
+
+    document.querySelectorAll('#attendanceGrid .child-card').forEach(card => {
+      card.style.opacity       = '0.6';
+      card.style.pointerEvents = 'none';
+    });
+
+    const btn = document.querySelector('#tab-attendance .btn-submit');
+    if (btn) {
+      btn.textContent   = '✅ تم إرسال الحضور';
+      btn.disabled      = true;
+      btn.style.opacity = '0.6';
+    }
+  }
+}
 /* ============================
    CHILD SELECTS (Notes + Incidents)
    ============================ */
