@@ -76,7 +76,7 @@ async function saveSetup() {
 async function loadChildren(cls) {
   showLoading(true);
   try {
-   const url  = `${APPS_SCRIPT_URL}?action=getChildren&class=${encodeURIComponent(cls)}`;
+    const url  = `${APPS_SCRIPT_URL}?action=getChildren&class=${encodeURIComponent(cls)}`;
     const res  = await fetch(url);
     const data = await res.json();
     const list = data.children || data.data;
@@ -92,25 +92,6 @@ async function loadChildren(cls) {
   }
   showLoading(false);
   initAll();
-}
-
-    script.onerror = function() {
-      cleanup();
-      showToast('⚠️ تعذر تحميل بيانات الأطفال', 'error');
-      children = [];
-      showLoading(false);
-      initAll();
-      resolve();
-    };
-
-    function cleanup() {
-      clearTimeout(timeout);
-      delete window[callbackName];
-      if (document.body.contains(script)) document.body.removeChild(script);
-    }
-
-    document.body.appendChild(script);
-  });
 }
 
 function initAll() {
@@ -223,6 +204,7 @@ async function submitAttendance() {
     }
   }
 }
+
 /* ============================
    CHILD SELECTS (Notes + Incidents)
    ============================ */
@@ -466,5 +448,4 @@ function todayISO() {
 
 function uid() {
   return Math.random().toString(36).slice(2, 7);
-
 }
