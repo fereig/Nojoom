@@ -76,7 +76,7 @@ async function saveSetup() {
 async function loadChildren(cls) {
   showLoading(true);
   try {
-    const url  = ${APPS_SCRIPT_URL}?action=getChildren&class=${encodeURIComponent(cls)};
+   const url  = `${APPS_SCRIPT_URL}?action=getChildren&class=${encodeURIComponent(cls)}`;
     const res  = await fetch(url);
     const data = await res.json();
     const list = data.children || data.data;
