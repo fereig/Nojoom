@@ -338,9 +338,12 @@ function filterPaymentStatus() {
     return;
   }
 
-  const filtered = allPaymentStatus.filter(p => {
-  const words = search.split(' ').filter(w => w.length > 0);
-  return words.every(word => p.child_name.includes(word));
+ const filtered = allPaymentStatus.filter(p => {
+  const nameParts = p.child_name.split(' ');
+  const searchParts = search.split(' ').filter(w => w.length > 0);
+  return searchParts.every(sword =>
+    nameParts.some(nword => nword.startsWith(sword))
+  );
 });
   const unpaid   = filtered.filter(p => p.status !== 'مدفوع');
   const paid     = filtered.filter(p => p.status === 'مدفوع');
