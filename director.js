@@ -293,7 +293,13 @@ function searchPayChild() {
     return;
   }
 
-  const matches = allPaymentStatus.filter(p => p.child_name.includes(q)).slice(0, 6);
+ const matches = allPaymentStatus.filter(p => {
+  const nameParts = p.child_name.split(' ');
+  const searchParts = q.split(' ').filter(w => w.length > 0);
+  return searchParts.every(sword =>
+    nameParts.some(nword => nword.startsWith(sword))
+  );
+}).slice(0, 6);
   if (!matches.length) { box.style.display = 'none'; return; }
 
   const rect = input.getBoundingClientRect();
