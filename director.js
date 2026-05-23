@@ -338,7 +338,10 @@ function filterPaymentStatus() {
     return;
   }
 
-  const filtered = allPaymentStatus.filter(p => p.child_name.includes(search));
+  const filtered = allPaymentStatus.filter(p => {
+  const words = search.split(' ').filter(w => w.length > 0);
+  return words.every(word => p.child_name.includes(word));
+});
   const unpaid   = filtered.filter(p => p.status !== 'مدفوع');
   const paid     = filtered.filter(p => p.status === 'مدفوع');
 
