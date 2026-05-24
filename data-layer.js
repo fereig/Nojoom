@@ -233,6 +233,7 @@ async function _sheetsPost(action, payload) {
     });
     const data = await res.json();
     if (data && data.status === 'duplicate') return { duplicate: true, message: data.message };
+    if (data && data.status === 'ok') return { ok: true, ...data };
     return { ok: true };
   } catch (err) {
     console.error("Sheets post فشلت:", err);
