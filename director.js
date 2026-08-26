@@ -152,8 +152,9 @@ function renderChart(values, labels) {
 
   const dpr  = window.devicePixelRatio || 1;
   const rect = canvas.getBoundingClientRect();
-  canvas.width  = (rect.width || canvas.offsetWidth || 600) * dpr;
-  canvas.height = 160 * dpr;
+ const safeWidth = Math.min(rect.width || canvas.offsetWidth || 600, 1200);
+canvas.width  = safeWidth * dpr;
+canvas.height = 160 * dpr;
   ctx.scale(dpr, dpr);
 
   const W = canvas.width / dpr;
