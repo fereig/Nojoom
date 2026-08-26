@@ -218,8 +218,8 @@ async function _sheetsGetChildren(cls) {
 }
 
 async function _sheetsGetAllChildren() {
-  const res  = await fetch(`${APPS_SCRIPT_URL}?action=getAllChildren`);
-  const data = await res.json();
+const res  = await fetch(`${APPS_SCRIPT_URL}?action=getFullChildren`);
+const data = await res.json();
   return data.children || [];
 }
 
