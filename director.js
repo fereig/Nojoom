@@ -88,8 +88,8 @@ function renderDashboard(d) {
   document.getElementById('kpiPresentTrend').className   = 'kpi-trend ' + (pct >= 90 ? 'up' : 'down');
 
   document.getElementById('kpiTotalTrend').textContent    = 'طفل مسجل';
-  document.getElementById('kpiPaymentsTrend').textContent = 'هذا الشهر';
-  document.getElementById('kpiUnpaidTrend').textContent   = 'لم يدفعوا بعد';
+document.getElementById('kpiPaymentsTrend').textContent = 'إجمالي';
+   document.getElementById('kpiUnpaidTrend').textContent   = 'لم يدفعوا بعد';
   document.getElementById('kpiUnpaidTrend').className     = 'kpi-trend down';
 
   document.querySelectorAll('.kpi-card').forEach(c => c.classList.remove('skeleton'));
