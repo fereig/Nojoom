@@ -71,9 +71,7 @@ export async function getPaymentStatus() {
       return children.map(child => {
         const payType   = String(child.payment_type || 'شهري').trim();
         const totalFee  = Number(child.fee) || 1500;
-        const fullAmount = payType === 'ترمي' ? totalFee * 3
-                         : payType === 'سنوي' ? totalFee * 12
-                         : totalFee;
+       const fullAmount = totalFee;
 
         const childPays = payments.filter(p => p.child_id === child.child_id);
         const paid      = childPays.reduce((s, p) => s + (Number(p.amount_paid) || 0), 0);
