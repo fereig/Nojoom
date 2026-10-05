@@ -62,7 +62,7 @@ export async function getPaymentStatus() {
     try {
       const [children, payments] = await Promise.all([
         getAllChildren(),
-        _firebaseGetCurrentMonthPayments()
+      _firebaseGetAllPayments()
       ]);
 
       const now          = new Date();
@@ -191,13 +191,8 @@ export async function registerChild(payload) {
 // ============================================================
 // PRIVATE — Firebase Helpers
 // ============================================================
-async function _firebaseGetCurrentMonthPayments() {
-  const now          = new Date();
-  const currentMonth = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
-  const q    = query(collection(db, "payments"),
-                     where("month", ">=", currentMonth),
-                     where("month", "<",  currentMonth + "-99"));
-  const snap = await getDocs(q);
+async function _firebaseGetAllPayments() {
+  const snap = await getDocs(collection(db, "payments"));
   return snap.docs.map(d => d.data());
 }
 
